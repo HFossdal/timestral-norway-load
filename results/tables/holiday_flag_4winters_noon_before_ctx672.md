@@ -1,0 +1,7 @@
+|                                                                   |   dMAE |   dPinball |   dCov80 |   dMAE_lo |   dMAE_hi |   dPinball_lo |   dPinball_hi |   n_days |   dMAE_pct |
+|:------------------------------------------------------------------|-------:|-----------:|---------:|----------:|----------:|--------------:|--------------:|---------:|-----------:|
+| ('timestral-209m_temp_holiday vs timestral-209m_temp', 'all')     | -0.933 |     -0.293 |    0.003 |    -1.223 |    -0.634 |        -0.413 |        -0.186 |      605 |     -1.17  |
+| ('timestral-209m_temp_holiday vs timestral-209m_temp', 'cold')    | -2.663 |     -0.852 |    0.01  |    -3.995 |    -1.404 |        -1.409 |        -0.386 |      164 |     -2.827 |
+| ('timestral-209m_temp_holiday vs timestral-209m_temp', 'peak')    | -2.208 |     -0.716 |    0.005 |    -3.277 |    -1.271 |        -1.239 |        -0.306 |      347 |     -2.34  |
+| ('timestral-209m_temp_holiday vs timestral-209m_temp', 'holiday') |  0.292 |     -0.806 |    0.021 |    -1.621 |     2.415 |        -1.827 |         0.166 |       39 |      0.266 |
+| ('timestral-209m_temp_holiday vs timestral-209m_temp', 'normal')  | -0.715 |     -0.15  |    0     |    -0.942 |    -0.503 |        -0.197 |        -0.103 |      542 |     -0.965 |

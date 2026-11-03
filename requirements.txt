@@ -1,0 +1,20 @@
+pandas>=2.2
+numpy>=1.26
+pyarrow>=15
+requests>=2.31
+python-dotenv>=1.0
+pyyaml>=6.0
+matplotlib>=3.8
+lightgbm>=4.3
+scikit-learn>=1.4  # needed by lightgbm's LGBMRegressor
+holidays>=0.107
+entsoe-py==0.8.1  # Statnett's day-ahead forecast (benchmark only)
+chronos-forecasting==2.3.2
+timesfm[torch]==3.0.2
+torch>=2.4
+# Timestral is not on PyPI; pinned to the commit used for all results
+timestral @ git+https://github.com/mistralai/timestral.git@a534bdbd244d64f3d9d743f46c7bf6fc330ed4ff
+tabulate>=0.9
+netCDF4>=1.7
+pyproj>=3.6
+pytest

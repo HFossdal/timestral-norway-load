@@ -1,0 +1,97 @@
+,bin,Q_lo,Q_hi,n,fallback,model,calibration,variant,level
+0,< -10,12.881393624999873,12.881393624999873,48,True,timestral-209m_temp_fc,1 winter,"CQR two-sided, temp bins",80
+1,-10 to -5,20.9475856250001,20.9475856250001,1008,False,timestral-209m_temp_fc,1 winter,"CQR two-sided, temp bins",80
+2,-5 to 0,26.559612031250253,26.559612031250253,4368,False,timestral-209m_temp_fc,1 winter,"CQR two-sided, temp bins",80
+3,>= 0,7.611242171874892,7.611242171874892,12696,False,timestral-209m_temp_fc,1 winter,"CQR two-sided, temp bins",80
+0,< -10,15.464906843749759,15.464906843749759,48,True,timestral-209m_temp_fc,1 winter,"CQR two-sided, temp bins",90
+1,-10 to -5,15.869365546874633,15.869365546874633,1008,False,timestral-209m_temp_fc,1 winter,"CQR two-sided, temp bins",90
+2,-5 to 0,32.47353631250007,32.47353631250007,4368,False,timestral-209m_temp_fc,1 winter,"CQR two-sided, temp bins",90
+3,>= 0,9.82722218750041,9.82722218750041,12696,False,timestral-209m_temp_fc,1 winter,"CQR two-sided, temp bins",90
+0,< -10,8.470898250000573,16.919124968750566,48,True,timestral-209m_temp_fc,1 winter,"CQR one-sided, temp bins",80
+1,-10 to -5,9.033926953124592,30.875336703124958,1008,False,timestral-209m_temp_fc,1 winter,"CQR one-sided, temp bins",80
+2,-5 to 0,16.66168117187499,37.058988343750116,4368,False,timestral-209m_temp_fc,1 winter,"CQR one-sided, temp bins",80
+3,>= 0,5.5876907343749735,9.96345968750029,12696,False,timestral-209m_temp_fc,1 winter,"CQR one-sided, temp bins",80
+0,< -10,11.281120125000143,18.85337374999972,48,True,timestral-209m_temp_fc,1 winter,"CQR one-sided, temp bins",90
+1,-10 to -5,4.643253906249811,27.81704734374989,1008,False,timestral-209m_temp_fc,1 winter,"CQR one-sided, temp bins",90
+2,-5 to 0,20.709362343749945,41.57109890624952,4368,False,timestral-209m_temp_fc,1 winter,"CQR one-sided, temp bins",90
+3,>= 0,8.733415312499346,10.303570624999338,12696,False,timestral-209m_temp_fc,1 winter,"CQR one-sided, temp bins",90
+0,< -10,10.878336562500408,10.878336562500408,840,False,timestral-209m_temp_fc,3 winters,"CQR two-sided, temp bins",80
+1,-10 to -5,35.02277757812544,35.02277757812544,4752,False,timestral-209m_temp_fc,3 winters,"CQR two-sided, temp bins",80
+2,-5 to 0,21.476905500000385,21.476905500000385,15432,False,timestral-209m_temp_fc,3 winters,"CQR two-sided, temp bins",80
+3,>= 0,6.19462768749986,6.19462768749986,33336,False,timestral-209m_temp_fc,3 winters,"CQR two-sided, temp bins",80
+0,< -10,4.924795156250184,4.924795156250184,840,False,timestral-209m_temp_fc,3 winters,"CQR two-sided, temp bins",90
+1,-10 to -5,45.25579503124936,45.25579503124936,4752,False,timestral-209m_temp_fc,3 winters,"CQR two-sided, temp bins",90
+2,-5 to 0,29.87730589062494,29.87730589062494,15432,False,timestral-209m_temp_fc,3 winters,"CQR two-sided, temp bins",90
+3,>= 0,8.182966421875335,8.182966421875335,33336,False,timestral-209m_temp_fc,3 winters,"CQR two-sided, temp bins",90
+0,< -10,23.822337437499755,2.6629824999999983,840,False,timestral-209m_temp_fc,3 winters,"CQR one-sided, temp bins",80
+1,-10 to -5,8.301932312500412,52.79447281249941,4752,False,timestral-209m_temp_fc,3 winters,"CQR one-sided, temp bins",80
+2,-5 to 0,12.933654609375026,28.955540781249965,15432,False,timestral-209m_temp_fc,3 winters,"CQR one-sided, temp bins",80
+3,>= 0,8.218687812499411,4.160499218750374,33336,False,timestral-209m_temp_fc,3 winters,"CQR one-sided, temp bins",80
+0,< -10,19.266428156250186,-11.271607968750232,840,False,timestral-209m_temp_fc,3 winters,"CQR one-sided, temp bins",90
+1,-10 to -5,26.578193515624662,73.60094559375011,4752,False,timestral-209m_temp_fc,3 winters,"CQR one-sided, temp bins",90
+2,-5 to 0,19.313720937499966,36.19502775000001,15432,False,timestral-209m_temp_fc,3 winters,"CQR one-sided, temp bins",90
+3,>= 0,10.657662265624822,5.950060000000121,33336,False,timestral-209m_temp_fc,3 winters,"CQR one-sided, temp bins",90
+0,< -10,24.14244039062487,24.14244039062487,48,True,chronos2_temp_fc,1 winter,"CQR two-sided, temp bins",80
+1,-10 to -5,36.822162500000104,36.822162500000104,1008,False,chronos2_temp_fc,1 winter,"CQR two-sided, temp bins",80
+2,-5 to 0,34.025755281249985,34.025755281249985,4368,False,chronos2_temp_fc,1 winter,"CQR two-sided, temp bins",80
+3,>= 0,19.54022396875007,19.54022396875007,12696,False,chronos2_temp_fc,1 winter,"CQR two-sided, temp bins",80
+0,< -10,29.35412662499948,29.35412662499948,48,True,chronos2_temp_fc,1 winter,"CQR two-sided, temp bins",90
+1,-10 to -5,32.98229414062462,32.98229414062462,1008,False,chronos2_temp_fc,1 winter,"CQR two-sided, temp bins",90
+2,-5 to 0,42.40122718749899,42.40122718749899,4368,False,chronos2_temp_fc,1 winter,"CQR two-sided, temp bins",90
+3,>= 0,24.789589374999196,24.789589374999196,12696,False,chronos2_temp_fc,1 winter,"CQR two-sided, temp bins",90
+0,< -10,13.290512234374773,33.42715921874969,48,True,chronos2_temp_fc,1 winter,"CQR one-sided, temp bins",80
+1,-10 to -5,-23.620877562500027,72.75612796874975,1008,False,chronos2_temp_fc,1 winter,"CQR one-sided, temp bins",80
+2,-5 to 0,7.28784285937536,55.68635851562476,4368,False,chronos2_temp_fc,1 winter,"CQR one-sided, temp bins",80
+3,>= 0,17.56866514062517,21.805151609375116,12696,False,chronos2_temp_fc,1 winter,"CQR one-sided, temp bins",80
+0,< -10,15.211999539062617,43.21094350000021,48,True,chronos2_temp_fc,1 winter,"CQR one-sided, temp bins",90
+1,-10 to -5,-29.251264406249902,80.18469421875034,1008,False,chronos2_temp_fc,1 winter,"CQR one-sided, temp bins",90
+2,-5 to 0,12.975139562500317,76.87237812500007,4368,False,chronos2_temp_fc,1 winter,"CQR one-sided, temp bins",90
+3,>= 0,19.4164022343748,30.610474640624943,12696,False,chronos2_temp_fc,1 winter,"CQR one-sided, temp bins",90
+0,< -10,17.664204062500175,17.664204062500175,840,False,chronos2_temp_fc,3 winters,"CQR two-sided, temp bins",80
+1,-10 to -5,39.17788718749989,39.17788718749989,4752,False,chronos2_temp_fc,3 winters,"CQR two-sided, temp bins",80
+2,-5 to 0,31.036986656250065,31.036986656250065,15432,False,chronos2_temp_fc,3 winters,"CQR two-sided, temp bins",80
+3,>= 0,15.794836203125215,15.794836203125215,33336,False,chronos2_temp_fc,3 winters,"CQR two-sided, temp bins",80
+0,< -10,7.787432874999922,7.787432874999922,840,False,chronos2_temp_fc,3 winters,"CQR two-sided, temp bins",90
+1,-10 to -5,53.38989968750002,53.38989968750002,4752,False,chronos2_temp_fc,3 winters,"CQR two-sided, temp bins",90
+2,-5 to 0,42.54957601562501,42.54957601562501,15432,False,chronos2_temp_fc,3 winters,"CQR two-sided, temp bins",90
+3,>= 0,21.717997398437547,21.717997398437547,33336,False,chronos2_temp_fc,3 winters,"CQR two-sided, temp bins",90
+0,< -10,1.727579062499899,30.780679687500196,840,False,chronos2_temp_fc,3 winters,"CQR one-sided, temp bins",80
+1,-10 to -5,-15.508904531249755,81.15720531250008,4752,False,chronos2_temp_fc,3 winters,"CQR one-sided, temp bins",80
+2,-5 to 0,7.290451171874793,47.86604617187504,15432,False,chronos2_temp_fc,3 winters,"CQR one-sided, temp bins",80
+3,>= 0,16.2767459062502,15.15920220312455,33336,False,chronos2_temp_fc,3 winters,"CQR one-sided, temp bins",80
+0,< -10,3.325988406250417,15.303734843749226,840,False,chronos2_temp_fc,3 winters,"CQR one-sided, temp bins",90
+1,-10 to -5,-9.211958921875066,102.13601656250012,4752,False,chronos2_temp_fc,3 winters,"CQR one-sided, temp bins",90
+2,-5 to 0,14.376496562500051,65.28269453124994,15432,False,chronos2_temp_fc,3 winters,"CQR one-sided, temp bins",90
+3,>= 0,20.891384250000556,22.442225390625026,33336,False,chronos2_temp_fc,3 winters,"CQR one-sided, temp bins",90
+0,< -10,11.547463093750139,11.547463093750139,48,True,timesfm3_temp_fc,1 winter,"CQR two-sided, temp bins",80
+1,-10 to -5,21.064935078125018,21.064935078125018,1008,False,timesfm3_temp_fc,1 winter,"CQR two-sided, temp bins",80
+2,-5 to 0,22.04284853125,22.04284853125,4368,False,timesfm3_temp_fc,1 winter,"CQR two-sided, temp bins",80
+3,>= 0,6.403526609375149,6.403526609375149,12696,False,timesfm3_temp_fc,1 winter,"CQR two-sided, temp bins",80
+0,< -10,,,48,True,timesfm3_temp_fc,1 winter,"CQR two-sided, temp bins",90
+1,-10 to -5,,,1008,False,timesfm3_temp_fc,1 winter,"CQR two-sided, temp bins",90
+2,-5 to 0,,,4368,False,timesfm3_temp_fc,1 winter,"CQR two-sided, temp bins",90
+3,>= 0,,,12696,False,timesfm3_temp_fc,1 winter,"CQR two-sided, temp bins",90
+0,< -10,5.046256562500275,16.785904374999973,48,True,timesfm3_temp_fc,1 winter,"CQR one-sided, temp bins",80
+1,-10 to -5,6.365241828124908,36.2814292968751,1008,False,timesfm3_temp_fc,1 winter,"CQR one-sided, temp bins",80
+2,-5 to 0,13.00630654687484,31.399104062499646,4368,False,timesfm3_temp_fc,1 winter,"CQR one-sided, temp bins",80
+3,>= 0,2.8461068750002596,10.084710656250081,12696,False,timesfm3_temp_fc,1 winter,"CQR one-sided, temp bins",80
+0,< -10,,,48,True,timesfm3_temp_fc,1 winter,"CQR one-sided, temp bins",90
+1,-10 to -5,,,1008,False,timesfm3_temp_fc,1 winter,"CQR one-sided, temp bins",90
+2,-5 to 0,,,4368,False,timesfm3_temp_fc,1 winter,"CQR one-sided, temp bins",90
+3,>= 0,,,12696,False,timesfm3_temp_fc,1 winter,"CQR one-sided, temp bins",90
+0,< -10,5.354569000000083,5.354569000000083,840,False,timesfm3_temp_fc,3 winters,"CQR two-sided, temp bins",80
+1,-10 to -5,29.81766021875046,29.81766021875046,4752,False,timesfm3_temp_fc,3 winters,"CQR two-sided, temp bins",80
+2,-5 to 0,20.94338490625023,20.94338490625023,15432,False,timesfm3_temp_fc,3 winters,"CQR two-sided, temp bins",80
+3,>= 0,7.064864796875099,7.064864796875099,33336,False,timesfm3_temp_fc,3 winters,"CQR two-sided, temp bins",80
+0,< -10,,,840,False,timesfm3_temp_fc,3 winters,"CQR two-sided, temp bins",90
+1,-10 to -5,,,4752,False,timesfm3_temp_fc,3 winters,"CQR two-sided, temp bins",90
+2,-5 to 0,,,15432,False,timesfm3_temp_fc,3 winters,"CQR two-sided, temp bins",90
+3,>= 0,,,33336,False,timesfm3_temp_fc,3 winters,"CQR two-sided, temp bins",90
+0,< -10,13.611448437500258,-1.8078282812502948,840,False,timesfm3_temp_fc,3 winters,"CQR one-sided, temp bins",80
+1,-10 to -5,13.605963734374654,45.82653445312508,4752,False,timesfm3_temp_fc,3 winters,"CQR one-sided, temp bins",80
+2,-5 to 0,10.486716546874959,28.74694612500116,15432,False,timesfm3_temp_fc,3 winters,"CQR one-sided, temp bins",80
+3,>= 0,10.686403468749631,2.7803036406248793,33336,False,timesfm3_temp_fc,3 winters,"CQR one-sided, temp bins",80
+0,< -10,,,840,False,timesfm3_temp_fc,3 winters,"CQR one-sided, temp bins",90
+1,-10 to -5,,,4752,False,timesfm3_temp_fc,3 winters,"CQR one-sided, temp bins",90
+2,-5 to 0,,,15432,False,timesfm3_temp_fc,3 winters,"CQR one-sided, temp bins",90
+3,>= 0,,,33336,False,timesfm3_temp_fc,3 winters,"CQR one-sided, temp bins",90

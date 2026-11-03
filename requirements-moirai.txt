@@ -1,0 +1,12 @@
+# Separate environment for Moirai 2.0 only (run_moirai.sh): uni2ts pins torch<2.5 and numpy 1.26,
+# which clash with the main environment. See README, Reproduce.
+torch==2.4.1
+uni2ts==2.0.0
+pyarrow<18  # newer pyarrow needs numpy 2
+pandas
+pyyaml
+holidays>=0.107
+lightgbm
+scikit-learn
+requests
+python-dotenv

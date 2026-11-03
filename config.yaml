@@ -1,0 +1,59 @@
+# Central configuration. All timestamps are UTC unless a key says "local".
+
+zones: [NO1, NO2, NO3, NO4, NO5]
+local_tz: Europe/Oslo
+
+# Data range. End dates are exclusive (same convention as the Frost API).
+history_start: "2021-01-01"   # Elhub consumption data starts here
+data_end: "2026-04-02"          # one day of buffer past the test period
+
+calibration_period: {start: "2024-11-01", end: "2025-04-01"}
+# Three calibration winters: the main fit for the recalibration and the bias correction
+# (calibration_period alone is the 1-winter variant, reported alongside)
+calibration_winters_sensitivity:
+  - {start: "2022-11-01", end: "2023-04-01"}
+  - {start: "2023-11-01", end: "2024-04-01"}
+  - {start: "2024-11-01", end: "2025-04-01"}
+test_period:        {start: "2025-11-01", end: "2026-04-01"}
+
+# Every model is forecast on all of these winters (names are used in cache file names).
+# w2024 = calibration winter, w2025 = test winter, w2022/w2023 = extra winters for the sensitivity run.
+evaluation_winters:
+  w2021: {start: "2021-11-01", end: "2022-04-01"}   # robustness only: energy-price crisis + COVID measures that winter
+  w2022: {start: "2022-11-01", end: "2023-04-01"}
+  w2023: {start: "2023-11-01", end: "2024-04-01"}
+  w2024: {start: "2024-11-01", end: "2025-04-01"}
+  w2025: {start: "2025-11-01", end: "2026-04-01"}
+
+# Weather: one representative Frost station per zone.
+# Station IDs are filled in after running: python -m src.data_weather --find-stations
+weather:
+  station_name_search:          # Frost 'name' search filter used for the lookup
+    NO1: "OSLO - BLINDERN*"
+    NO2: "KJEVIK*"         # Kristiansand airport; Sømskleiva (SN39150) had 14% model-filled values
+    NO3: "TRONDHEIM*"
+    NO4: "TROMSØ*"
+    NO5: "BERGEN*"
+  stations:                     # chosen Frost source IDs (SN<number>)
+    NO1: SN18700  # OSLO - BLINDERN
+    NO2: SN39040  # KJEVIK (Kristiansand airport)
+    NO3: SN68860  # TRONDHEIM - VOLL
+    NO4: SN90450  # TROMSØ
+    NO5: SN50540  # BERGEN - FLORIDA
+  max_interpolate_hours: 3      # gaps up to this length are linearly interpolated; longer gaps stay NaN
+
+# Forecasting
+horizon_hours: 24
+context_hours: 2688             # 16 weeks, chosen on the calibration winter 2024-25 (4 weeks = 672 was the original)
+origin: noon_before             # main setting; "midnight" = 00:00 local on the target day (secondary)
+quantiles: [0.05, 0.10, 0.50, 0.90, 0.95]
+regime_threshold_end: "2025-11-01"   # cold-snap / peak thresholds use only history before this (= test start)
+conformal_min_n: 240            # Mondrian (group, zone) cells with fewer calibration hours fall back to the group
+bootstrap_n: 1000               # day-level bootstrap resamples for confidence intervals
+temp_noise_sd: 1.5              # robustness run: one N(0, sd) offset per forecast day added to future temperatures
+timestral_sizes: [5M, 28M, 123M, 209M]
+
+paths:
+  raw: data/raw
+  processed: data/processed
+  results: results

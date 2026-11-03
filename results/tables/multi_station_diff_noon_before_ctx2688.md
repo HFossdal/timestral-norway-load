@@ -1,0 +1,32 @@
+|                                                                 |    dMAE |   dPinball |   dCov80 |   dMAE_lo |   dMAE_hi |   dPinball_lo |   dPinball_hi |   n_days |   dMAE_pct | winter   |
+|:----------------------------------------------------------------|--------:|-----------:|---------:|----------:|----------:|--------------:|--------------:|---------:|-----------:|:---------|
+| ('timestral-209m_temp_multi vs timestral-209m_temp', 'all')     |  -3.895 |     -0.704 |   -0.001 |    -5.401 |    -2.206 |        -1.038 |        -0.33  |      151 |     -5.27  | w2024    |
+| ('timestral-209m_temp_multi vs timestral-209m_temp', 'cold')    |  -1.225 |      0.628 |   -0.035 |    -7.077 |     4.954 |        -0.611 |         2.011 |       27 |     -1.628 | w2024    |
+| ('timestral-209m_temp_multi vs timestral-209m_temp', 'peak')    |  -5.651 |     -1.085 |    0.006 |   -11.082 |    -0.592 |        -2.203 |        -0.062 |       84 |     -6.706 | w2024    |
+| ('timestral-209m_temp_multi vs timestral-209m_temp', 'holiday') |  -2.004 |     -0.513 |   -0.01  |    -7.72  |     3.574 |        -1.658 |         0.832 |        9 |     -1.945 | w2024    |
+| ('timestral-209m_temp_multi vs timestral-209m_temp', 'normal')  |  -3.846 |     -0.698 |    0     |    -5.748 |    -1.873 |        -1.086 |        -0.237 |      142 |     -5.486 | w2024    |
+| ('chronos2_temp_multi vs chronos2_temp', 'all')                 |  -4.507 |     -0.942 |    0.006 |    -6.287 |    -2.698 |        -1.414 |        -0.439 |      151 |     -5.616 | w2024    |
+| ('chronos2_temp_multi vs chronos2_temp', 'cold')                |  -3.81  |     -0.03  |    0.001 |   -10.856 |     3.802 |        -1.602 |         1.933 |       27 |     -4.576 | w2024    |
+| ('chronos2_temp_multi vs chronos2_temp', 'peak')                |  -7.597 |     -2.092 |    0.02  |   -12.926 |    -2.842 |        -3.75  |        -0.659 |       84 |     -7.556 | w2024    |
+| ('chronos2_temp_multi vs chronos2_temp', 'holiday')             |  -2.831 |      0.355 |   -0.002 |    -8.417 |     4.209 |        -0.892 |         1.955 |        9 |     -2.638 | w2024    |
+| ('chronos2_temp_multi vs chronos2_temp', 'normal')              |  -4.279 |     -0.927 |    0.005 |    -6.179 |    -2.188 |        -1.387 |        -0.425 |      142 |     -5.678 | w2024    |
+| ('timesfm3_temp_multi vs timesfm3_temp', 'all')                 |  -3.345 |    nan     |    0.001 |    -5.228 |    -1.37  |       nan     |       nan     |      151 |     -4.281 | w2024    |
+| ('timesfm3_temp_multi vs timesfm3_temp', 'cold')                |  -4.155 |    nan     |   -0.031 |    -9.63  |     3.209 |       nan     |       nan     |       27 |     -5.147 | w2024    |
+| ('timesfm3_temp_multi vs timesfm3_temp', 'peak')                |  -7.913 |    nan     |    0.018 |   -12.879 |    -3.496 |       nan     |       nan     |       84 |     -8.582 | w2024    |
+| ('timesfm3_temp_multi vs timesfm3_temp', 'holiday')             |  -0.013 |    nan     |   -0.009 |    -6.46  |     7.554 |       nan     |       nan     |        9 |     -0.013 | w2024    |
+| ('timesfm3_temp_multi vs timesfm3_temp', 'normal')              |  -2.854 |    nan     |    0.001 |    -4.95  |    -0.852 |       nan     |       nan     |      142 |     -3.86  | w2024    |
+| ('timestral-209m_temp_multi vs timestral-209m_temp', 'all')     |  -3.27  |     -0.831 |   -0.005 |    -5.378 |    -1.516 |        -1.349 |        -0.36  |      151 |     -4.683 | w2025    |
+| ('timestral-209m_temp_multi vs timestral-209m_temp', 'cold')    |  -4.101 |     -0.661 |   -0.018 |    -9.846 |     1.391 |        -2.013 |         0.562 |       50 |     -5.958 | w2025    |
+| ('timestral-209m_temp_multi vs timestral-209m_temp', 'peak')    |  -5.888 |     -1.137 |   -0.01  |    -9.803 |    -2.28  |        -2.177 |        -0.241 |      106 |     -8.284 | w2025    |
+| ('timestral-209m_temp_multi vs timestral-209m_temp', 'holiday') |  -8.753 |     -2.353 |   -0.01  |   -17.756 |    -0.887 |        -4.987 |        -0.128 |        9 |     -7.165 | w2025    |
+| ('timestral-209m_temp_multi vs timestral-209m_temp', 'normal')  |  -1.451 |     -0.539 |   -0.003 |    -3.464 |     0.513 |        -0.994 |        -0.086 |      130 |     -2.247 | w2025    |
+| ('chronos2_temp_multi vs chronos2_temp', 'all')                 |  -2.619 |     -0.742 |   -0.004 |    -4.51  |    -0.799 |        -1.256 |        -0.279 |      151 |     -3.42  | w2025    |
+| ('chronos2_temp_multi vs chronos2_temp', 'cold')                |  -3.897 |     -0.764 |   -0.004 |    -9.205 |     0.779 |        -2.227 |         0.559 |       50 |     -4.764 | w2025    |
+| ('chronos2_temp_multi vs chronos2_temp', 'peak')                |  -2.268 |     -0.822 |   -0.014 |    -6.186 |     1.744 |        -1.875 |         0.208 |      106 |     -2.836 | w2025    |
+| ('chronos2_temp_multi vs chronos2_temp', 'holiday')             | -11.07  |     -2.994 |   -0.01  |   -19.224 |    -3.753 |        -5.494 |        -0.712 |        9 |     -8.908 | w2025    |
+| ('chronos2_temp_multi vs chronos2_temp', 'normal')              |  -1.861 |     -0.484 |    0     |    -3.557 |    -0.066 |        -0.875 |        -0.034 |      130 |     -2.625 | w2025    |
+| ('timesfm3_temp_multi vs timesfm3_temp', 'all')                 |  -3.083 |    nan     |    0.002 |    -4.919 |    -1.312 |       nan     |       nan     |      151 |     -4.066 | w2025    |
+| ('timesfm3_temp_multi vs timesfm3_temp', 'cold')                |  -1.584 |    nan     |   -0.007 |    -5.721 |     2.446 |       nan     |       nan     |       50 |     -2.162 | w2025    |
+| ('timesfm3_temp_multi vs timesfm3_temp', 'peak')                |  -2.878 |    nan     |   -0.012 |    -6.388 |     0.608 |       nan     |       nan     |      106 |     -3.802 | w2025    |
+| ('timesfm3_temp_multi vs timesfm3_temp', 'holiday')             |  -8.407 |    nan     |   -0.001 |   -18.62  |     0.053 |       nan     |       nan     |        9 |     -6.924 | w2025    |
+| ('timesfm3_temp_multi vs timesfm3_temp', 'normal')              |  -2.59  |    nan     |    0.006 |    -4.404 |    -0.826 |       nan     |       nan     |      130 |     -3.6   | w2025    |

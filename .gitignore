@@ -1,0 +1,18 @@
+# Secrets
+.env
+
+# Data and large outputs (re-downloadable / re-computable)
+data/*
+!data/.gitkeep
+results/cache/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.ipynb_checkpoints/
+
+# Local run logs, superseded outputs, crash dumps
+results/logs/
+results/old_outputs/
+*.stackdump

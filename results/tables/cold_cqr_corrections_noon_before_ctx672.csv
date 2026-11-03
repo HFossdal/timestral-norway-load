@@ -1,0 +1,65 @@
+,bin,Q_lo,Q_hi,n,fallback,model,context_h,variant,level
+0,< -10,2.3268634374999237,2.3268634374999237,1464,False,chronos2_temp,672,"CQR two-sided, temp bins",80
+1,-10 to -5,22.46043728125005,22.46043728125005,4968,False,chronos2_temp,672,"CQR two-sided, temp bins",80
+2,-5 to 0,10.401456578125362,10.401456578125362,15936,False,chronos2_temp,672,"CQR two-sided, temp bins",80
+3,>= 0,7.172311703124933,7.172311703124933,32112,False,chronos2_temp,672,"CQR two-sided, temp bins",80
+0,< -10,4.085931250000613,4.085931250000613,1464,False,chronos2_temp,672,"CQR two-sided, temp bins",90
+1,-10 to -5,35.95515632812476,35.95515632812476,4968,False,chronos2_temp,672,"CQR two-sided, temp bins",90
+2,-5 to 0,13.584204078124912,13.584204078124912,15936,False,chronos2_temp,672,"CQR two-sided, temp bins",90
+3,>= 0,8.81787362500063,8.81787362500063,32112,False,chronos2_temp,672,"CQR two-sided, temp bins",90
+0,< -10,-39.21037031249989,30.245823749999545,1464,False,chronos2_temp,672,"CQR one-sided, temp bins",80
+1,-10 to -5,-19.07187042187479,63.206632734375034,4968,False,chronos2_temp,672,"CQR one-sided, temp bins",80
+2,-5 to 0,-0.18593650000002526,17.509314500000528,15936,False,chronos2_temp,672,"CQR one-sided, temp bins",80
+3,>= 0,10.425075421875135,3.050920015624797,32112,False,chronos2_temp,672,"CQR one-sided, temp bins",80
+0,< -10,-33.078729453125106,29.846174375000373,1464,False,chronos2_temp,672,"CQR one-sided, temp bins",90
+1,-10 to -5,-20.141795312500108,77.35889179687501,4968,False,chronos2_temp,672,"CQR one-sided, temp bins",90
+2,-5 to 0,5.830762656250954,20.28608343750011,15936,False,chronos2_temp,672,"CQR one-sided, temp bins",90
+3,>= 0,16.02552157812488,3.1503401406248486,32112,False,chronos2_temp,672,"CQR one-sided, temp bins",90
+0,< -10,-1.5776934374998746,-1.5776934374998746,1464,False,timestral-209m_temp,672,"CQR two-sided, temp bins",80
+1,-10 to -5,18.38937085937505,18.38937085937505,4968,False,timestral-209m_temp,672,"CQR two-sided, temp bins",80
+2,-5 to 0,-3.116760968749986,-3.116760968749986,15936,False,timestral-209m_temp,672,"CQR two-sided, temp bins",80
+3,>= 0,-6.1744090624997625,-6.1744090624997625,32112,False,timestral-209m_temp,672,"CQR two-sided, temp bins",80
+0,< -10,-8.755857812499926,-8.755857812499926,1464,False,timestral-209m_temp,672,"CQR two-sided, temp bins",90
+1,-10 to -5,31.134982421875065,31.134982421875065,4968,False,timestral-209m_temp,672,"CQR two-sided, temp bins",90
+2,-5 to 0,-6.851765734375022,-6.851765734375022,15936,False,timestral-209m_temp,672,"CQR two-sided, temp bins",90
+3,>= 0,-9.821577484374757,-9.821577484374757,32112,False,timestral-209m_temp,672,"CQR two-sided, temp bins",90
+0,< -10,-49.0464481250001,25.168234062500233,1464,False,timestral-209m_temp,672,"CQR one-sided, temp bins",80
+1,-10 to -5,-38.98186009375013,64.50092434374983,4968,False,timestral-209m_temp,672,"CQR one-sided, temp bins",80
+2,-5 to 0,-15.922196374999658,5.628907093750058,15936,False,timestral-209m_temp,672,"CQR one-sided, temp bins",80
+3,>= 0,-2.284453749999784,-10.285515859374755,32112,False,timestral-209m_temp,672,"CQR one-sided, temp bins",80
+0,< -10,-39.95609749999994,11.848668812500364,1464,False,timestral-209m_temp,672,"CQR one-sided, temp bins",90
+1,-10 to -5,-42.369782890625174,76.33695156249996,4968,False,timestral-209m_temp,672,"CQR one-sided, temp bins",90
+2,-5 to 0,-16.108033093750237,0.7959496875000696,15936,False,timestral-209m_temp,672,"CQR one-sided, temp bins",90
+3,>= 0,-4.218659406249799,-14.23617112500051,32112,False,timestral-209m_temp,672,"CQR one-sided, temp bins",90
+0,< -10,6.519974374999947,6.519974374999947,1464,False,chronos2_temp,2688,"CQR two-sided, temp bins",80
+1,-10 to -5,24.813306062500033,24.813306062500033,4968,False,chronos2_temp,2688,"CQR two-sided, temp bins",80
+2,-5 to 0,11.4626830468751,11.4626830468751,15936,False,chronos2_temp,2688,"CQR two-sided, temp bins",80
+3,>= 0,3.0754712812504295,3.0754712812504295,32112,False,chronos2_temp,2688,"CQR two-sided, temp bins",80
+0,< -10,7.455549375000373,7.455549375000373,1464,False,chronos2_temp,2688,"CQR two-sided, temp bins",90
+1,-10 to -5,36.00526515625006,36.00526515625006,4968,False,chronos2_temp,2688,"CQR two-sided, temp bins",90
+2,-5 to 0,13.564719375000095,13.564719375000095,15936,False,chronos2_temp,2688,"CQR two-sided, temp bins",90
+3,>= 0,4.809793218750201,4.809793218750201,32112,False,chronos2_temp,2688,"CQR two-sided, temp bins",90
+0,< -10,-13.058176499999718,18.920375156249975,1464,False,chronos2_temp,2688,"CQR one-sided, temp bins",80
+1,-10 to -5,-21.555117812499702,58.330067437499565,4968,False,chronos2_temp,2688,"CQR one-sided, temp bins",80
+2,-5 to 0,3.469657499999812,18.340055156249946,15936,False,chronos2_temp,2688,"CQR one-sided, temp bins",80
+3,>= 0,4.885472656249931,0.7359032812501027,32112,False,chronos2_temp,2688,"CQR one-sided, temp bins",80
+0,< -10,1.4404531250002037,10.880201718749959,1464,False,chronos2_temp,2688,"CQR one-sided, temp bins",90
+1,-10 to -5,-10.029850843749955,67.64827734375012,4968,False,chronos2_temp,2688,"CQR one-sided, temp bins",90
+2,-5 to 0,5.536084062499867,20.124404578124995,15936,False,chronos2_temp,2688,"CQR one-sided, temp bins",90
+3,>= 0,8.064301562500077,1.5498734375000822,32112,False,chronos2_temp,2688,"CQR one-sided, temp bins",90
+0,< -10,-2.220765312500589,-2.220765312500589,1464,False,timestral-209m_temp,2688,"CQR two-sided, temp bins",80
+1,-10 to -5,13.046108203125186,13.046108203125186,4968,False,timestral-209m_temp,2688,"CQR two-sided, temp bins",80
+2,-5 to 0,2.648328499999934,2.648328499999934,15936,False,timestral-209m_temp,2688,"CQR two-sided, temp bins",80
+3,>= 0,-2.3922869531252218,-2.3922869531252218,32112,False,timestral-209m_temp,2688,"CQR two-sided, temp bins",80
+0,< -10,-3.978254562499842,-3.978254562499842,1464,False,timestral-209m_temp,2688,"CQR two-sided, temp bins",90
+1,-10 to -5,22.23583078124966,22.23583078124966,4968,False,timestral-209m_temp,2688,"CQR two-sided, temp bins",90
+2,-5 to 0,3.3864809374995275,3.3864809374995275,15936,False,timestral-209m_temp,2688,"CQR two-sided, temp bins",90
+3,>= 0,-2.3724092968750483,-2.3724092968750483,32112,False,timestral-209m_temp,2688,"CQR two-sided, temp bins",90
+0,< -10,10.062587734375029,-11.834843281250869,1464,False,timestral-209m_temp,2688,"CQR one-sided, temp bins",80
+1,-10 to -5,-6.934782734375403,29.109065859375733,4968,False,timestral-209m_temp,2688,"CQR one-sided, temp bins",80
+2,-5 to 0,6.317872374999752,0.4887790312495781,15936,False,timestral-209m_temp,2688,"CQR one-sided, temp bins",80
+3,>= 0,1.3827346562502498,-6.169796718750149,32112,False,timestral-209m_temp,2688,"CQR one-sided, temp bins",80
+0,< -10,9.364101343750008,-22.481946328125105,1464,False,timestral-209m_temp,2688,"CQR one-sided, temp bins",90
+1,-10 to -5,0.18799517187471793,45.927192968750205,4968,False,timestral-209m_temp,2688,"CQR one-sided, temp bins",90
+2,-5 to 0,9.064467187500668,-1.1904637500001627,15936,False,timestral-209m_temp,2688,"CQR one-sided, temp bins",90
+3,>= 0,2.120042343750356,-5.856767187499827,32112,False,timestral-209m_temp,2688,"CQR one-sided, temp bins",90
