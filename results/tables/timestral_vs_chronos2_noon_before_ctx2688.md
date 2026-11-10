@@ -1,32 +1,32 @@
 |                                                           |    dMAE |   dPinball |   dCov80 |   dMAE_lo |   dMAE_hi |   dPinball_lo |   dPinball_hi |   n_days |   dMAE_pct | winter              |
 |:----------------------------------------------------------|--------:|-----------:|---------:|----------:|----------:|--------------:|--------------:|---------:|-----------:|:--------------------|
-| ('timestral-209m_temp vs chronos2_temp', 'all')           |  -5.897 |     -1.701 |    0.049 |    -8.389 |    -3.271 |        -2.38  |        -0.959 |      151 |     -9.074 | w2021               |
-| ('timestral-209m_temp vs chronos2_temp', 'cold')          | -13.644 |     -3.15  |    0.075 |   -26.712 |    -2.419 |        -6.64  |        -0.07  |       34 |    -18.38  | w2021               |
-| ('timestral-209m_temp vs chronos2_temp', 'peak')          | -28.86  |     -8.308 |    0.172 |   -44.989 |   -14.006 |       -12.835 |        -4.05  |       50 |    -29.084 | w2021               |
-| ('timestral-209m_temp vs chronos2_temp', 'holiday')       |  -4.983 |     -1.239 |    0.035 |   -22.436 |     8.211 |        -6.123 |         2.545 |        9 |     -6.206 | w2021               |
-| ('timestral-209m_temp vs chronos2_temp', 'normal')        |  -4.779 |     -1.415 |    0.045 |    -7.484 |    -2.064 |        -2.173 |        -0.721 |      142 |     -7.624 | w2021               |
-| ('timestral-209m_temp vs chronos2_temp', 'all')           |  -3.535 |     -1.001 |    0.022 |    -5.552 |    -1.597 |        -1.612 |        -0.481 |      151 |     -5.348 | w2022               |
-| ('timestral-209m_temp vs chronos2_temp', 'cold')          |  -2.218 |     -0.349 |    0.01  |    -7.886 |     4.371 |        -2.324 |         1.756 |       36 |     -3.412 | w2022               |
-| ('timestral-209m_temp vs chronos2_temp', 'peak')          |  -9.674 |     -2.943 |    0.077 |   -17.575 |    -1.533 |        -5.377 |        -0.759 |       64 |    -13.418 | w2022               |
-| ('timestral-209m_temp vs chronos2_temp', 'holiday')       |  -5.39  |     -1.021 |    0.031 |   -14.146 |     4.451 |        -4.435 |         2.974 |        9 |     -6.5   | w2022               |
-| ('timestral-209m_temp vs chronos2_temp', 'normal')        |  -3.124 |     -0.934 |    0.019 |    -5.239 |    -0.96  |        -1.512 |        -0.399 |      138 |     -4.809 | w2022               |
+| ('timestral-209m_temp vs chronos2_temp', 'all')           |  -5.897 |     -1.699 |    0.049 |    -8.396 |    -3.271 |        -2.38  |        -0.959 |      151 |     -9.078 | w2021               |
+| ('timestral-209m_temp vs chronos2_temp', 'cold')          | -13.644 |     -3.15  |    0.075 |   -27.27  |    -1.186 |        -6.631 |         0.254 |       34 |    -18.38  | w2021               |
+| ('timestral-209m_temp vs chronos2_temp', 'peak')          | -28.86  |     -8.308 |    0.172 |   -45.247 |   -14.784 |       -13.032 |        -4.128 |       50 |    -29.084 | w2021               |
+| ('timestral-209m_temp vs chronos2_temp', 'holiday')       |  -4.983 |     -1.239 |    0.035 |   -23.489 |     9.486 |        -6.067 |         2.944 |        9 |     -6.206 | w2021               |
+| ('timestral-209m_temp vs chronos2_temp', 'normal')        |  -4.778 |     -1.413 |    0.044 |    -7.379 |    -2.311 |        -2.059 |        -0.732 |      142 |     -7.627 | w2021               |
+| ('timestral-209m_temp vs chronos2_temp', 'all')           |  -3.533 |     -1.001 |    0.022 |    -5.552 |    -1.596 |        -1.612 |        -0.481 |      151 |     -5.346 | w2022               |
+| ('timestral-209m_temp vs chronos2_temp', 'cold')          |  -2.215 |     -0.349 |    0.01  |    -7.863 |     4.617 |        -2.281 |         1.983 |       36 |     -3.404 | w2022               |
+| ('timestral-209m_temp vs chronos2_temp', 'peak')          |  -9.674 |     -2.943 |    0.077 |   -17.182 |    -1.571 |        -5.238 |        -0.73  |       64 |    -13.418 | w2022               |
+| ('timestral-209m_temp vs chronos2_temp', 'holiday')       |  -5.39  |     -1.021 |    0.031 |   -15.306 |     5.151 |        -4.936 |         2.968 |        9 |     -6.5   | w2022               |
+| ('timestral-209m_temp vs chronos2_temp', 'normal')        |  -3.122 |     -0.935 |    0.02  |    -5.307 |    -0.965 |        -1.565 |        -0.352 |      138 |     -4.807 | w2022               |
 | ('timestral-209m_temp vs chronos2_temp', 'all')           |  -9.166 |     -2.125 |    0.046 |   -11.771 |    -6.646 |        -2.733 |        -1.532 |      152 |    -12.314 | w2023               |
-| ('timestral-209m_temp vs chronos2_temp', 'cold')          |  -7.906 |     -2.107 |    0.045 |   -14.295 |    -1.281 |        -3.811 |        -0.426 |       51 |     -8.975 | w2023               |
-| ('timestral-209m_temp vs chronos2_temp', 'peak')          | -11.555 |     -3.108 |    0.067 |   -17.128 |    -6.38  |        -4.666 |        -1.749 |       93 |    -13.495 | w2023               |
-| ('timestral-209m_temp vs chronos2_temp', 'holiday')       |   1.629 |     -0.239 |   -0.003 |    -8.533 |    11.833 |        -2.772 |         2.126 |       12 |      1.51  | w2023               |
-| ('timestral-209m_temp vs chronos2_temp', 'normal')        | -10.06  |     -2.185 |    0.045 |   -12.817 |    -7.081 |        -2.86  |        -1.526 |      132 |    -14.617 | w2023               |
-| ('timestral-209m_temp vs chronos2_temp', 'all')           |  -6.356 |     -1.607 |    0.029 |    -9.652 |    -3.385 |        -2.634 |        -0.732 |      151 |     -7.921 | w2024               |
-| ('timestral-209m_temp vs chronos2_temp', 'cold')          |  -8.003 |     -2.766 |    0.073 |   -15.834 |     0.263 |        -4.915 |        -0.524 |       27 |     -9.611 | w2024               |
-| ('timestral-209m_temp vs chronos2_temp', 'peak')          | -16.261 |     -5.809 |    0.05  |   -28.726 |    -6.585 |       -11.02  |        -2.165 |       84 |    -16.173 | w2024               |
-| ('timestral-209m_temp vs chronos2_temp', 'holiday')       |  -4.251 |     -0.472 |    0.023 |   -12.624 |     6.861 |        -3.151 |         2.888 |        9 |     -3.963 | w2024               |
-| ('timestral-209m_temp vs chronos2_temp', 'normal')        |  -5.248 |     -1.102 |    0.027 |    -8.361 |    -2.144 |        -1.841 |        -0.275 |      142 |     -6.964 | w2024               |
-| ('timestral-209m_temp vs chronos2_temp', 'all')           |  -6.778 |     -1.609 |    0.049 |    -9.369 |    -4.035 |        -2.336 |        -0.909 |      151 |     -8.85  | w2025               |
-| ('timestral-209m_temp vs chronos2_temp', 'cold')          | -12.971 |     -3.013 |    0.082 |   -19.985 |    -6.391 |        -4.652 |        -1.431 |       50 |    -15.857 | w2025               |
-| ('timestral-209m_temp vs chronos2_temp', 'peak')          |  -8.878 |     -2.375 |    0.071 |   -13.657 |    -4.046 |        -3.565 |        -1.309 |      106 |    -11.105 | w2025               |
-| ('timestral-209m_temp vs chronos2_temp', 'holiday')       |  -2.107 |      0.59  |   -0.01  |   -15.992 |    11.129 |        -3.869 |         5.976 |        9 |     -1.696 | w2025               |
-| ('timestral-209m_temp vs chronos2_temp', 'normal')        |  -6.373 |     -1.477 |    0.046 |    -9.349 |    -3.616 |        -2.306 |        -0.747 |      130 |     -8.987 | w2025               |
-| ('timestral-209m_temp_fc vs chronos2_temp_fc', 'all')     |  -6.032 |     -1.754 |    0.054 |    -8.854 |    -3.25  |        -2.676 |        -0.941 |      149 |     -7.304 | w2025 real forecast |
-| ('timestral-209m_temp_fc vs chronos2_temp_fc', 'cold')    |  -8.653 |     -2.859 |    0.063 |   -17.761 |     0.772 |        -5.612 |        -0.069 |       50 |     -9.107 | w2025 real forecast |
-| ('timestral-209m_temp_fc vs chronos2_temp_fc', 'peak')    |  -7.197 |     -2.278 |    0.067 |   -12.85  |    -1.61  |        -3.995 |        -0.618 |      106 |     -7.876 | w2025 real forecast |
-| ('timestral-209m_temp_fc vs chronos2_temp_fc', 'holiday') |   0.246 |      0.088 |    0.008 |   -10.591 |    11.158 |        -4.262 |         3.502 |        9 |      0.204 | w2025 real forecast |
-| ('timestral-209m_temp_fc vs chronos2_temp_fc', 'normal')  |  -6.679 |     -1.814 |    0.056 |    -9.888 |    -3.637 |        -2.736 |        -0.932 |      128 |     -8.88  | w2025 real forecast |
+| ('timestral-209m_temp vs chronos2_temp', 'cold')          |  -7.906 |     -2.107 |    0.045 |   -13.999 |    -0.396 |        -3.773 |        -0.297 |       51 |     -8.975 | w2023               |
+| ('timestral-209m_temp vs chronos2_temp', 'peak')          | -11.555 |     -3.108 |    0.067 |   -17.521 |    -5.65  |        -4.778 |        -1.582 |       93 |    -13.495 | w2023               |
+| ('timestral-209m_temp vs chronos2_temp', 'holiday')       |   1.629 |     -0.239 |   -0.003 |    -9.278 |    13.369 |        -2.835 |         2.57  |       12 |      1.51  | w2023               |
+| ('timestral-209m_temp vs chronos2_temp', 'normal')        | -10.06  |     -2.185 |    0.045 |   -12.898 |    -7.393 |        -2.841 |        -1.569 |      132 |    -14.617 | w2023               |
+| ('timestral-209m_temp vs chronos2_temp', 'all')           |  -6.357 |     -1.608 |    0.029 |    -9.654 |    -3.388 |        -2.636 |        -0.732 |      151 |     -7.924 | w2024               |
+| ('timestral-209m_temp vs chronos2_temp', 'cold')          |  -8.003 |     -2.766 |    0.073 |   -16.918 |     0.769 |        -5.133 |        -0.422 |       27 |     -9.611 | w2024               |
+| ('timestral-209m_temp vs chronos2_temp', 'peak')          | -16.261 |     -5.809 |    0.05  |   -28.441 |    -6.719 |       -11.13  |        -2.385 |       84 |    -16.173 | w2024               |
+| ('timestral-209m_temp vs chronos2_temp', 'holiday')       |  -4.251 |     -0.472 |    0.023 |   -13.241 |     7.702 |        -3.365 |         3.038 |        9 |     -3.963 | w2024               |
+| ('timestral-209m_temp vs chronos2_temp', 'normal')        |  -5.248 |     -1.103 |    0.027 |    -8.334 |    -2.217 |        -1.809 |        -0.332 |      142 |     -6.968 | w2024               |
+| ('timestral-209m_temp vs chronos2_temp', 'all')           |  -6.784 |     -1.61  |    0.049 |    -9.372 |    -4.035 |        -2.336 |        -0.91  |      151 |     -8.863 | w2025               |
+| ('timestral-209m_temp vs chronos2_temp', 'cold')          | -12.971 |     -3.013 |    0.082 |   -19.855 |    -6.001 |        -4.735 |        -1.458 |       50 |    -15.857 | w2025               |
+| ('timestral-209m_temp vs chronos2_temp', 'peak')          |  -8.878 |     -2.375 |    0.071 |   -13.782 |    -4.144 |        -3.61  |        -1.296 |      106 |    -11.105 | w2025               |
+| ('timestral-209m_temp vs chronos2_temp', 'holiday')       |  -2.107 |      0.59  |   -0.01  |   -16.735 |    12.756 |        -4.067 |         6.445 |        9 |     -1.696 | w2025               |
+| ('timestral-209m_temp vs chronos2_temp', 'normal')        |  -6.382 |     -1.478 |    0.046 |    -9.448 |    -3.469 |        -2.359 |        -0.721 |      130 |     -9.011 | w2025               |
+| ('timestral-209m_temp_fc vs chronos2_temp_fc', 'all')     |  -6.035 |     -1.754 |    0.054 |    -8.976 |    -3.127 |        -2.668 |        -0.903 |      149 |     -7.311 | w2025 real forecast |
+| ('timestral-209m_temp_fc vs chronos2_temp_fc', 'cold')    |  -8.653 |     -2.859 |    0.063 |   -17.891 |     0.413 |        -5.755 |        -0.145 |       50 |     -9.107 | w2025 real forecast |
+| ('timestral-209m_temp_fc vs chronos2_temp_fc', 'peak')    |  -7.197 |     -2.278 |    0.067 |   -13.191 |    -1.538 |        -4.157 |        -0.593 |      106 |     -7.876 | w2025 real forecast |
+| ('timestral-209m_temp_fc vs chronos2_temp_fc', 'holiday') |   0.246 |      0.088 |    0.008 |   -10.469 |    11.686 |        -4.183 |         3.831 |        9 |      0.204 | w2025 real forecast |
+| ('timestral-209m_temp_fc vs chronos2_temp_fc', 'normal')  |  -6.685 |     -1.814 |    0.056 |    -9.866 |    -3.872 |        -2.773 |        -0.954 |      128 |     -8.895 | w2025 real forecast |

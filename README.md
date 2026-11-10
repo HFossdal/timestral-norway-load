@@ -4,22 +4,22 @@ I tested Mistral's Timestral, a zero-shot time-series foundation model released 
 
 ![Model response to colder temperature relative to the historical load-temperature slope](results/figures/probe_response.png)
 
-*The probe: the same test-winter forecasts, rerun with every future temperature 3 °C colder. Each dot is the change in the median forecast divided by the zone's historical load-temperature slope (1.0 means the model reacts as strongly as history says load does). Timestral's response grows from 4 to 8 to 16 weeks of history and then levels off at 32 (mean 0.41, 0.56, 0.68, 0.68). The smaller Timestral-123M shows the same pattern. TimesFM 3.0's response grows less (0.50 to 0.62), Chronos-2's barely moves, and Moirai 2.0 doesn't react to temperature at all.*
+*The probe: the same test-winter forecasts, rerun with every future temperature 3 °C colder. Each dot is the change in the median forecast divided by the zone's historical load-temperature slope (1.0 means the model reacts as strongly as history says load does). Timestral's response grows from 4 to 8 to 16 weeks of history and then levels off at 32 (mean 0.41, 0.56, 0.68, 0.68). The smaller Timestral-123M shows the same pattern. TimesFM 3.0's response grows less (0.50 to 0.62), Chronos-2's barely moves, and Moirai 2.0 has almost no temperature response.*
 
 ## Main findings
 
-1. Timestral learns how strongly cold drives load from the history window it is given. With 4 weeks of history its response to colder weather is about 40% weaker than with 16 weeks (the same pattern on a second winter), and its under-forecast appears on exactly the days that are colder than anything in the window (bias 0, +46 and +76 MW as the cold gets newer). Chronos-2's response hardly depends on history length, and TimesFM 3.0 sits in between. On synthetic load with a known temperature slope, Timestral recovers the slope almost exactly even from 4 weeks. The real-data pattern comes back when load follows temperature with a delay, as it does when buildings cool slowly: Timestral then reaches half the correct response with 4 weeks and all of it with 16, while Chronos-2 doesn't change. TimesFM 3.0 handles the delay from 4 weeks already, so the delay explains Timestral's dependence on history but not TimesFM's smaller one. None of the synthetic features I tested reproduces TimesFM's pattern.
+1. Timestral's response to temperature depends on the history window it is given. With 4 weeks of history its response to colder weather is about 40% weaker than with 16 weeks (the same pattern on a second winter), and its under-forecast appears on days colder than anything in the window (bias 0, +46 and +76 MW as the cold gets newer). Chronos-2's response hardly depends on history length, and TimesFM 3.0 sits in between. Controlled synthetic experiments examine a delayed temperature effect as a possible mechanism. They do not establish the cause of the real-data pattern; corrected matched-history, multi-seed results are reported in section 1.
 2. With 4 weeks of history, the cold-snap misses are one-sided. Overall coverage of the 80% band looks fine (0.79), but on days below -10 °C the load was above the band 31% of the time and below it 2%, where a calibrated band misses 10% on each side. Chronos-2 fails the same way (28% above).
 3. Two fixes work. Giving the model 16 weeks of history lowers its MAE by 12-17% in each of five winters and balances the cold-snap misses. Recalibrating each end of the band separately, per temperature bin, brings the cold-snap misses to about 10% above and 10% below over five winters, for Timestral, Chronos-2 and TimesFM 3.0. Standard conformalized quantile regression (CQR) doesn't, because it widens both sides of the band when the problem is on one side.
 4. With real weather forecasts the second fix only partly holds. Using archived MET Nordic forecasts instead of observed temperature, Timestral's error rises from 70 to 77 MW (cold snaps 69 to 86 MW) and its bands become too narrow (coverage 0.76). Recalibrating on earlier real-forecast runs restores 80% coverage overall. Over four winters, though, the load was still above the recalibrated band on 14% of cold-snap hours (24% without it, target 10%) and on 19% [13, 27] of hours below -10 °C. On cold days the weather forecast was 1-2 °C too mild, and a correction keyed to the forecast temperature can't see cold that the forecast didn't predict. This is the main open problem.
-5. With 16 weeks of history, Timestral was the most accurate model I tested. Temperature cuts the error of every model that can use it, Timestral's by 39% (-44 MW [-52, -37]). Timestral had a lower error than Chronos-2 (by 5-12%) and TimesFM 3.0 (by 5-8%) in all five winters, and also with real weather forecasts in the four winters that have them, with every paired interval excluding zero. It also beat a LightGBM baseline. With only 4 weeks of history the three foundation models are statistically tied in every winter, so the lead comes from how much Timestral gains from the longer window. With measured temperature, the 80% bands of Timestral and TimesFM are calibrated and Chronos-2's are too narrow. Moirai 2.0 could not make use of temperature at all.
-6. With real weather forecasts, Timestral was also more accurate than the day-ahead forecast Statnett publishes on the ENTSO-E Transparency Platform, in all four winters (77 against 128 MW in the test winter). That holds over the five zones, not in each: in NO1, the largest zone, Statnett's forecast was better in the three earlier winters. It is also the published forecast, which may not be the one Statnett operates on. For an operator, covering the daily peak on 9 days in 10 takes about 700 MW of margin above Timestral's forecast with real weather forecasts (five zones summed), against about 750 MW for TimesFM 3.0, 900 MW for Chronos-2 and 1,000 MW for Statnett's published forecast.
+5. With 16 weeks of history, Timestral was the most accurate model I tested. Temperature cuts the error of every model that can use it, Timestral's by 39% (-44 MW [-52, -37], one-day interval). Timestral had lower overall error than Chronos-2 (by 5-12%) and TimesFM 3.0 (by 5-8%) in all five winters, and also with real weather forecasts in the four winters that have them. These overall comparisons exclude zero with 1-, 3- and 7-day bootstrap blocks. It also beat a LightGBM baseline. At 4 weeks, the differences are smaller and their significance depends on the winter and block length; they do not establish equivalence. With measured temperature, the 80% bands of Timestral and TimesFM are calibrated and Chronos-2's are too narrow. Moirai 2.0 could not make use of temperature at all.
+6. With real weather forecasts, Timestral was also more accurate than Statnett's published day-ahead forecast overall in all four winters (77 against 128 MW in the test winter). That holds over the five zones, not in each: in NO1, the largest zone, Statnett's forecast was better in the three earlier winters. The comparison scales different load targets and uses different forecast-time information; the published forecast may differ from Statnett's operational one. Retrospective estimates of summed zone-wise 90th-percentile daily peak margins are about 700 MW for Timestral with real weather forecasts, 750 MW for TimesFM 3.0, 900 MW for Chronos-2 and 1,000 MW for Statnett. These margins were estimated from test-period errors, not validated as an operational reserve policy.
 
 ## What this does and does not show
 
 | Claim | Evidence | Limits |
 |---|---|---|
-| Timestral's temperature sensitivity is set by its context window, more than TimesFM 3.0's and unlike Chronos-2's | Counterfactual probe (3 °C colder), all 5 zones, replicated on a second winter; bias by how new the cold is to the window, over 5 winters; synthetic load with a known slope, which Timestral, Chronos-2 and TimesFM 3.0 (one slope only) all recover from context | Probe on two winters; the historical slope is a daily long-run figure, so ratios below 1 are not errors in themselves; the synthetic tests show a delayed temperature effect is enough to produce Timestral's pattern, not that it is the only cause, and none of the tested features explains TimesFM's smaller effect |
+| Timestral's temperature response changes with context length, more than TimesFM 3.0's and unlike Chronos-2's | Counterfactual probe (3 °C colder), all 5 zones, replicated on a second winter; bias by how new the cold is to the window, over 5 winters; controlled synthetic experiments with known temperature effects | Probe on two winters; the historical daily slope is a reference, not the true causal day-ahead response. Matched-history synthetic tests examine delayed temperature effects as a possible mechanism; they do not identify the cause in real load. |
 | The cold-snap misses are one-sided and come from short history | 4 vs 16 weeks, paired, in every winter; same pattern in Chronos-2, milder in TimesFM 3.0 | Deep-cold evidence rests on few days (14 zone-days below -10 °C in the test winter) |
 | One-sided temperature-bin recalibration fixes the cold bands | Fitted on earlier winters only; leave-one-winter-out over 5 winters | A standard tool (CQR, Romano et al. 2019) applied per group and per side, not a new method. With real weather forecasts it works only partly: 14% above vs 6% below the band over four winters |
 | Timestral is the most accurate model tested, given 16 weeks of history, and more accurate than Statnett's published day-ahead forecast | Paired: 5 winters vs Chronos-2 and TimesFM 3.0; real-forecast runs in 4 winters, scored on the same hours as Statnett's forecast | One country; Moirai 2.0 could not use temperature; Statnett may operate on a different forecast than the one it publishes, and in NO1 its published forecast was better in three of the four winters; LightGBM not tuned |
@@ -34,14 +34,14 @@ The study started with 4 weeks of history. In that setting the model looks well 
 | Temperature | [MET Norway Frost API](https://frost.met.no) | One station per zone: NO1 Oslo-Blindern (SN18700), NO2 Kristiansand-Kjevik (SN39040), NO3 Trondheim-Voll (SN68860), NO4 Tromsø (SN90450), NO5 Bergen-Florida (SN50540). Kjevik replaced Sømskleiva, which had 14% interpolated values. |
 | Temperature, several stations (robustness check) | MET Norway Frost API | 3-5 stations per zone, population-weighted (section 7). |
 | Statnett's day-ahead load forecast (benchmark) | [ENTSO-E Transparency Platform](https://transparency.entsoe.eu) via `entsoe-py`: day-ahead total load forecast and actual total load per bidding zone | The forecast Statnett publishes by 10:00 CET the day before. It targets total load, which includes grid losses, so I scale it to Elhub's level (section 6). Hourly until 18 Mar 2025 and 15-minute after, averaged to hours. 0 missing hours in the study period. |
-| Weather forecasts | [MET Nordic forecast archive](https://github.com/metno/NWPdocs/wiki/MET-Nordic-dataset) | The 06 UTC run of the day before (available at the noon decision), nearest 1 km grid cell to each station. The archive has no runs from 12 UTC on 16 Mar to 06 UTC on 18 Mar 2026, so those 2 test days are dropped from every real-forecast comparison (likewise 8 Feb 2024, whose run was incomplete). |
+| Weather forecasts | [MET Nordic forecast archive](https://github.com/metno/NWPdocs/wiki/MET-Nordic-dataset) | The nominal 06 UTC slot of the day before, with an older 00 UTC fallback, nearest 1 km grid cell to each station. Availability at noon is assumed from these slots; exact publication timestamps were not reconstructed. The archive has no runs from 12 UTC on 16 Mar to 06 UTC on 18 Mar 2026, so those 2 test days are dropped from every real-forecast comparison (likewise 8 Feb 2024, whose run was incomplete). |
 
-All timestamps are UTC. Each target day is the 24 UTC hours from local midnight. On the 23-hour spring DST day the window ends at 00:00 local the next day, so every forecast has the same shape.
+All timestamps are UTC. Each target window contains 24 hourly timestamps starting at local midnight. On the 23-hour spring DST day this includes the next local day's 00:00 hour, which also appears in that next day's forecast. Forecast origin distinguishes these two predictions of the same target hour; pairing includes origin as well as zone and target time.
 
 ## Setup
 
 - Task: day-ahead, 24 hours, one forecast per zone and day. The main forecast origin is 12:00 local time the day before (lead 12-35 h), which matches day-ahead bidding. A midnight origin (lead 0-23 h) is the secondary comparison.
-- Periods: test winter 2025-26 (1 Nov to 31 Mar) and calibration winter 2024-25, plus 2022-23 and 2023-24 for the 3-winter calibration and robustness checks. I added 2021-22 late, as a robustness winter only: it is never used for the main fit or the test-winter results, and appears only in the five-winter checks. Nothing is fitted on the test winter.
+- Periods: test winter 2025-26 (1 Nov to 31 Mar) and calibration winter 2024-25, plus 2022-23 and 2023-24 for the 3-winter calibration and robustness checks. I added 2021-22 late, as a robustness winter only: it is never used for the main fit or the test-winter results, and appears only in the five-winter checks. For the primary test-winter evaluation, model weights and recalibration coefficients are not fitted on that winter. Leave-one-winter-out sensitivity fits the other winters, including later ones; it is a retrospective diagnostic, not a rolling deployment backtest. Context selection used test-winter evidence, as disclosed below; reserve margins are descriptive estimates from test-period errors.
 - Models, producing the quantiles 0.05, 0.10, 0.50, 0.90 and 0.95 unless noted:
   - Seasonal naive: same hour last week, with empirical residual quantiles. The floor any model has to beat.
   - LightGBM quantile regression on lagged load, calendar and temperature, trained on data before each winter, with common hand-set hyperparameters (400 trees, learning rate 0.05; not tuned). A standard weather-aware machine-learning baseline of the kind used in practice.
@@ -50,13 +50,13 @@ All timestamps are UTC. Each target day is the 24 UTC hours from local midnight.
   - For Timestral and Chronos-2, temperature enters as a past and future covariate through each model's documented interface.
   - Statnett's day-ahead forecast, as published on the ENTSO-E Transparency Platform: the professional benchmark. It is a point forecast, so only its accuracy is compared (section 6).
   - TimesFM 3.0 (Google) and Moirai 2.0 small (Salesforce, Aug 2025), zero-shot, two other widely used open foundation model families with a covariate input, added after the main study to check whether the context effect is specific to Timestral. TimesFM then got the main runs Timestral and Chronos-2 have (all five winters at 4 and 16 weeks, the probe on two winters, real weather forecasts, several stations), but not the noisy-temperature, holiday-flag, 32-week or midnight-origin runs; Moirai 2.0 ran on the test and calibration winters (section 6). TimesFM takes temperature through its documented past-and-future covariate input. Moirai 2.0's documentation doesn't mention covariates; its code accepts them as extra variates, which is what I used. Both predict only the deciles 0.1-0.9, so their 90% band and pinball loss are not reported, and both have non-commercial weight licences.
-- Context length: 16 weeks (2,688 h) in the main setting, chosen on the calibration winter (section 3). 4 weeks (672 h) was the original setting and is kept as the diagnosis.
+- Context length: 16 weeks (2,688 h) in the main setting. The gain was first noticed on the test winter, then checked on the calibration and other winters before adopting it (section 3). This was not a fully held-out context selection. 4 weeks (672 h) was the original setting and is kept as the diagnosis.
 - Regimes, with thresholds from history before the test winter:
   - Cold snap: days below the zone's 5th percentile of daily mean temperature. The test winter has 29-41 such days per zone, the calibration winter only 7-23.
   - Peak: hours above the zone's 95th load percentile (reporting only). Any correction that conditions on peak uses an ex-ante version.
   - Holiday: 24 Dec-1 Jan, Easter and public holidays.
 - Metrics: MAE, MAPE, MASE, pinball loss (the proper score for quantiles), 80%/90% coverage and width, and one-sided miss rates (share of hours above q0.90 or below q0.10, target 10% each).
-- Confidence intervals, in brackets: day-level block bootstrap with 1,000 resamples. Paired comparisons resample the same days for both models.
+- Real-data confidence intervals use 1,000 resamples. The original tables use one-day blocks; the technical-review sensitivity check reports 1-, 3- and 7-day moving blocks side by side. Models and zones share each draw, and pooled comparisons resample within winters. Synthetic intervals instead resample matched noise seeds and origins, keeping zones together (details below).
 
 ## Results
 
@@ -84,9 +84,19 @@ I forecast the test winter a second time with every future temperature 3 °C col
 | Moirai 2.0, 4 weeks | 0.02 | 0.02 | 0.02 | 0.02 | 0.02 | 0.02 [0.02, 0.02] |
 | Moirai 2.0, 16 weeks | 0.00 | 0.01 | 0.01 | 0.00 | 0.01 | 0.00 [0.00, 0.01] |
 
-With 4 weeks Timestral reacts weakly. The response rises with 8 and 16 weeks (to 1.5-2× the 4-week value; mean change from 4 to 16 weeks +0.27 [0.26, 0.28]) and doesn't rise further at 32 weeks, the same point where accuracy stops improving (section 3). Timestral-123M behaves the same way (mean 0.43 at 4 weeks, 0.63 at 16), so this looks like a property of the model family rather than of one checkpoint. Chronos-2 hardly changes (+0.00 [-0.01, +0.02]). TimesFM 3.0 sits in between: its mean response rises from 0.50 to 0.62 (+0.12 [0.11, 0.14]). Moirai 2.0 doesn't respond at all (section 6). The window-range regression and the synthetic tests at β = 50 below (clean, slow drift, Christmas dip, delayed effect, one station) include TimesFM 3.0 as well; the other slopes and the squeezed or stretched range cover Timestral and Chronos-2 only.
+With 4 weeks Timestral reacts weakly. The response rises with 8 and 16 weeks (to 1.5-2× the 4-week value; mean change from 4 to 16 weeks +0.27 [0.26, 0.28]) and doesn't rise further at 32 weeks, the same point where accuracy stops improving (section 3). Timestral-123M behaves the same way (mean 0.43 at 4 weeks, 0.63 at 16), so this looks like a property of the model family rather than of one checkpoint. Chronos-2 hardly changes (+0.00 [-0.01, +0.02]). TimesFM 3.0 sits in between: its mean response rises from 0.50 to 0.62 (+0.12 [0.11, 0.14]). Moirai 2.0 has almost no response (section 6). The window-range regression and the synthetic tests at β = 50 below (clean, slow drift, Christmas dip, delayed effect, one station) include TimesFM 3.0 as well; the other slopes and the squeezed or stretched range cover Timestral and Chronos-2 only.
 
-The intervals come from the day-level bootstrap (`probe_summary`), and the differences between models and history lengths are much larger than them.
+The plotted intervals use one-day bootstrap blocks (`probe_summary`). The technical-review check also reports 3- and 7-day blocks (`review_probe_bootstrap`), keeping models and zones paired. Test-winter increases from 4 to 16 weeks, normalised by the historical daily load-temperature slope:
+
+| Model | Increase | 7-day-block 95% interval |
+|---|---:|---|
+| Timestral-209M | +0.269 | [+0.243, +0.294] |
+| Chronos-2 | +0.003 | [-0.018, +0.029] |
+| TimesFM 3.0 | +0.123 | [+0.088, +0.156] |
+
+The paired context-change differences are +0.265 [+0.236, +0.288] for Timestral minus Chronos-2 and +0.145 [+0.118, +0.175] for Timestral minus TimesFM (7-day intervals). Both differences exclude zero with all three block lengths in both winters. These are paired interaction tests, rather than a comparison of separate model intervals.
+
+![Temperature-response context effects with 1-, 3- and 7-day bootstrap intervals, preserving model and zone pairing](results/figures/probe_bootstrap_sensitivity.png)
 
 A day-ahead model that sees a sudden 3 °C drop only in the future can reasonably react less than the long-run slope, since buildings cool slowly, so a ratio below 1 is not wrong in itself. The comparison across window lengths and models is the part I rely on.
 
@@ -125,60 +135,64 @@ I labelled each zone-day in the four main winters by whether it is colder than e
 
 | Target day | Zone-days | Bias, 4 weeks | Bias, 16 weeks | MAE change, 4 → 16 weeks |
 |---|---:|---:|---:|---|
-| A day as cold is in the last 4 weeks | 2,753 | 0 MW | -4 MW | -14% (-11 MW [-12, -9]) |
+| A day as cold is in the last 4 weeks | 2,752 | 0 MW | -4 MW | -14% (-11 MW [-12, -9]) |
 | Colder than the last 4 weeks, not the last 16 | 59 | +46 MW | -10 MW | -14% (-14 MW [-27, -0]) |
-| Colder than the last 16 weeks too | 214 | +76 MW | +29 MW | -25% (-26 MW [-34, -19]) |
+| Colder than the last 16 weeks too | 214 | +76 MW | +29 MW | -25% (-26 MW [-33, -19]) |
 
 With 4 weeks, the under-forecast appears exactly when the cold is new to the window. 16 weeks removes it where the longer window has seen such cold, and cuts it by more than half where it hasn't. Adding 2021-22 (5 winters) gives the same picture: the bias on days new to both windows falls from +74 to +25 MW.
 
-#### Synthetic load with a known slope
+#### Synthetic load with a known slope (corrected technical-review rerun)
 
-To check the mechanism where the answer is known, I built synthetic load as a daily and weekly profile plus β × (15 °C - T) plus noise, on real station temperatures. The model can then learn the true slope β only from the history window (`src/synthetic.py`, 45 forecasts per cell, plan fixed before running).
+Synthetic load combines a daily/weekly profile, a known heating-temperature effect and AR(1) noise, driven by real station temperatures. The original generator restarted noise and slow drift at the beginning of each context, so the overlapping four weeks differed between the two history lengths. Those results have been superseded.
 
-![Synthetic load with a known slope: model response vs the true slope, and vs the temperature range in the window](results/figures/synthetic_probe.png)
+The corrected generator creates one common maximum-history process per zone and noise seed, then slices it by origin and context length. With unmodified temperature, the four-week load and temperature inputs equal the final four weeks of the sixteen-week inputs exactly. For range experiments, temperatures are still squeezed/stretched around each window's own mean; the noise remains matched and future temperatures stay unchanged.
 
-| Response / true slope | β = 25 | β = 50 | β = 100 | β = 50, window range squeezed ×0.5 / stretched ×1.5 |
-|---|---:|---:|---:|---|
-| Timestral, 4 weeks | 1.00 | 1.02 | 1.01 | 0.94 / 1.00 |
-| Timestral, 16 weeks | 1.02 | 1.02 | 1.00 | 0.96 / 1.02 |
-| Chronos-2, 4 weeks | 0.93 | 0.91 | 0.91 | 0.94 / 0.89 |
-| Chronos-2, 16 weeks | 0.92 | 0.89 | 0.86 | 0.86 / 0.88 |
+All results below were rerun with five matched noise seeds (0–4), 15 weekly origins from December 2025 to March 2026, and three zones (NO1, NO3, NO4): 225 forecasts per cell. Context differences are paired by model, zone, origin and seed. The 95% intervals use 2,000 crossed seed/origin bootstrap draws, with all zones kept together for each origin. Seed variability is reported separately, rather than treating the five copies of an origin as independent dates. Full per-seed results are in `results/tables/synthetic_seed_summary.*`.
 
-Both models learn the slope from the context. Timestral's response matches β almost exactly, while Chronos-2's runs about 10% low. Since β is only in the window, this is direct evidence that the covariate effect is learned in context. TimesFM 3.0, run on the β = 50 cell only, recovers 0.96 of the slope with 4 weeks and 0.92 with 16. On this clean data 4 weeks are enough, and the range of temperatures seen barely matters. The context dependence on real data must therefore come from something that real load has and this synthetic load lacks.
+![Corrected synthetic responses to the known slope and window temperature range; five matched seeds with seed/origin bootstrap intervals](results/figures/synthetic_probe.png)
 
-#### Adding real-data features to the synthetic load
+Response divided by the known slope (TimesFM ran β = 50 only):
 
-I added one real-data feature at a time, at β = 50, without telling the model about it (each plan fixed before running). The first two candidates were slow level changes unrelated to temperature (a daily AR(1), sd 100 MW), and a 10% load dip on 24 Dec-1 Jan, which is cold and low-load at the same time and so pulls the apparent slope toward zero.
+| Model / history       | β = 25   |   β = 50 | β = 100   | β = 50, range ×0.5 / ×1.5   |
+|:----------------------|:---------|---------:|:----------|:----------------------------|
+| Timestral, 4 weeks    | 0.99     |     1.01 | 1.00      | 0.92 / 1.00                 |
+| Timestral, 16 weeks   | 1.01     |     1.02 | 1.00      | 0.94 / 1.02                 |
+| Chronos-2, 4 weeks    | 0.92     |     0.9  | 0.91      | 0.92 / 0.90                 |
+| Chronos-2, 16 weeks   | 0.91     |     0.89 | 0.86      | 0.86 / 0.87                 |
+| TimesFM 3.0, 4 weeks  | n/a      |     0.96 | n/a       | n/a / n/a                   |
+| TimesFM 3.0, 16 weeks | n/a      |     0.93 | n/a       | n/a / n/a                   |
 
-| Response / true slope | Clean | + slow drift | + Christmas dip | Christmas dip, windows containing it |
-|---|---:|---:|---:|---:|
-| Timestral, 4 weeks | 1.02 | 1.01 | 1.00 | 1.00 (15 windows) |
-| Timestral, 16 weeks | 1.02 | 1.01 | 1.01 | 1.01 (33) |
-| Chronos-2, 4 weeks | 0.91 | 0.89 | 0.87 | 0.76 [0.66, 0.85] (15) |
-| Chronos-2, 16 weeks | 0.89 | 0.84 | 0.85 | 0.83 (33) |
-| TimesFM 3.0, 4 weeks | 0.96 | 0.95 | 0.96 | 0.96 (15) |
-| TimesFM 3.0, 16 weeks | 0.92 | 0.91 | 0.89 | 0.88 (33) |
+#### Adding real-data features to the matched synthetic histories
 
-Neither explains it. Timestral separates the slope from both, even in 4-week windows that contain Christmas. It is Chronos-2 that a short window with Christmas throws off. TimesFM 3.0 isn't thrown off either, and with either feature its response falls slightly from 4 to 16 weeks (drift -0.04 [-0.09, +0.01], Christmas dip -0.06 [-0.11, -0.01]), the opposite of its rise on real data.
+At β = 50, the added features are a slow daily AR(1) drift (stationary SD 100 MW), a 10% load dip on 24 December–1 January, a delayed temperature effect, and a mismatch between the single station supplied to the model and the several-station temperature driving load. These are controlled simulations, not estimates of the true load-generating process.
 
-Two more candidates:
-- A delayed effect: load follows temperature smoothed over about a day (exponential, 24 h time constant), while the model sees hourly temperature. A sustained 3 °C drop then reaches only 39% of its full effect within the forecast day, so the correct response is 0.39 β and the ratio is taken against that.
-- One station for the zone: load is built from the several-stations zone temperature (section 7), but the model only gets the single station.
+Response divided by the known response for each forecast, across five seeds. The Christmas multiplier also reduces the true temperature response on holiday target hours; this analytical reference is corrected per origin, without changing the inferred model outputs:
 
-| Response / correct response | 4 weeks | 16 weeks | Change, 4 → 16 weeks [95% CI] |
-|---|---:|---:|---|
-| Timestral, delayed effect | 0.51 | 1.03 | +0.52 [0.45, 0.60] |
-| TimesFM 3.0, delayed effect | 1.00 | 0.99 | -0.01 [-0.09, +0.07] |
-| Chronos-2, delayed effect | 0.92 | 0.89 | -0.03 [-0.08, +0.03] |
-| Timestral, one station | 0.60 | 0.71 | +0.10 [0.07, 0.14] |
-| TimesFM 3.0, one station | 0.67 | 0.64 | -0.03 [-0.08, +0.02] |
-| Chronos-2, one station | 0.62 | 0.62 | 0.00 [-0.03, +0.03] |
+| Model / history       |   Clean |   Slow drift |   Christmas dip |
+|:----------------------|--------:|-------------:|----------------:|
+| Timestral, 4 weeks    |    1.01 |         1    |            1.01 |
+| Timestral, 16 weeks   |    1.02 |         1.01 |            1.02 |
+| Chronos-2, 4 weeks    |    0.9  |         0.86 |            0.87 |
+| Chronos-2, 16 weeks   |    0.89 |         0.85 |            0.86 |
+| TimesFM 3.0, 4 weeks  |    0.96 |         0.96 |            0.96 |
+| TimesFM 3.0, 16 weeks |    0.93 |         0.91 |            0.91 |
 
-The delayed effect reproduces Timestral's real-data pattern. With 4 weeks Timestral gets half the correct response and with 16 weeks all of it, in each of the three zones. Chronos-2 is unaffected by window length, and responds more strongly than Timestral at 4 weeks but less at 16, as in the real-data probe. My reading is that a slow response is harder to infer than an instant one, and Timestral needs more history to pin down the dynamics. TimesFM 3.0 gets the delayed effect right from 4 weeks (1.00), so this explains Timestral's dependence on history but not TimesFM's smaller one on real data. None of the four features tested here (slow drift, Christmas dip, delayed effect, one station) makes TimesFM's response rise with history, so its cause is still open.
+For the delayed effect, load follows exponentially smoothed temperature with α = 1/24 per hour. The correct mean response to a sustained 3 °C drop during the 24-hour horizon is 0.3867 times β, not β. The table normalises by that smaller correct response (the exact value is computed in `src/synthetic.py`). For the station condition, a coherent zone-wide temperature change is assumed.
 
-Using one station lowers every model's response, most where the station tracks the zone worst (NO4, 0.35 for Timestral at 4 weeks). That is the usual effect of a noisy input. It adds only a little to the length effect, but it helps explain why the real ratios stay below 1.
+| Model / condition           |   4 weeks |   16 weeks | Change [95% CI]      | Change across seeds: min / max (SD)   |
+|:----------------------------|----------:|-----------:|:---------------------|:--------------------------------------|
+| Timestral, delayed effect   |      0.52 |       1.02 | +0.51 [+0.45, +0.57] | +0.50 / +0.52 (0.005)                 |
+| Timestral, one station      |      0.6  |       0.7  | +0.10 [+0.07, +0.13] | +0.09 / +0.10 (0.005)                 |
+| Chronos-2, delayed effect   |      0.91 |       0.9  | -0.01 [-0.05, +0.03] | -0.02 / -0.00 (0.007)                 |
+| Chronos-2, one station      |      0.6  |       0.62 | +0.02 [-0.00, +0.04] | +0.00 / +0.02 (0.008)                 |
+| TimesFM 3.0, delayed effect |      0.99 |       0.99 | +0.00 [-0.06, +0.07] | -0.03 / +0.02 (0.021)                 |
+| TimesFM 3.0, one station    |      0.66 |       0.64 | -0.02 [-0.05, +0.02] | -0.03 / -0.00 (0.009)                 |
 
-The 24 h time constant is my assumption, and the test shows that a delayed effect is enough to produce the pattern, not that it is the cause in the real data. I did not test a relation that steepens in deep cold.
+With matched histories, Timestral's delayed-effect response rises from 0.52 to 1.02 of the correct response. This is evidence for a possible mechanism behind the real-data context effect: a delayed covariate effect can be harder to infer from a short window. It does not establish that thermal inertia caused the Norwegian result. Station mismatch also produces a smaller positive context effect (+0.10 [+0.07, +0.13]). Several artificial features can therefore produce context dependence; the simulations leave multiple possible mechanisms for real load.
+
+![Changes in normalised response with longer context, for five features and three models; five seeds with zones clustered by origin](results/figures/synthetic_mechanism.png)
+
+The smoothing time constant is an assumption. The simulations use only one winter's temperatures, three zones and 15 weekly origins with overlapping histories; five noise seeds are not five independent weather histories. A real-data test with a smoothed-temperature input is still needed. Legacy synthetic caches are excluded by the `matched-v2` path and a complete-grid validation; the report refuses to render from partial or mixed caches.
 
 ### 2. Short history: one-sided misses in cold snaps
 
@@ -198,21 +212,41 @@ The 24 h time constant is my assumption, and the test shows that a delayed effec
 
 ### 3. First fix: more history
 
-Change in MAE, 16 vs 4 weeks of history (paired, per winter). The context length was chosen on the calibration winter 2024-25.
+Change in MAE, 16 vs 4 weeks of history (paired, per winter). The effect was first noticed on the test winter, then checked on the calibration winter 2024-25 and other winters. The main setting was changed after these checks; the calibration result is supporting evidence, not an independent context-selection procedure.
 
-| Winter | Timestral, all | Timestral, cold snaps | Chronos-2, all | TimesFM 3.0, all |
-|---|---|---|---|---|
-| 2022-23 | -13% [-9.4 MW: -12.0, -7.0] | -21% | -8% | -8% |
-| 2023-24 | -17% [-13.1 MW: -16.6, -9.9] | -24% | -7% | -12% |
-| **2024-25 (calibration)** | **-12% [-10.5 MW: -14.0, -7.3]** | **-22%** | **-5%** | **-11%** |
-| 2025-26 (test) | -17% [-14.5 MW: -18.0, -11.6] | -23% | -8% | -12% |
-| 2021-22 (robustness) | -14% [-9.8 MW: -12.5, -7.2] | -14% | -5% | -12% |
+| Winter                | Timestral, all                 | Timestral, cold snaps   | Chronos-2, all   | TimesFM 3.0, all   |
+|:----------------------|:-------------------------------|:------------------------|:-----------------|:-------------------|
+| 2022-23               | -13% (-9.4 [-12.0, -7.0] MW)   | -21%                    | -8%              | -8%                |
+| 2023-24               | -17% (-13.1 [-16.6, -9.9] MW)  | -24%                    | -7%              | -12%               |
+| 2024-25 (calibration) | -12% (-10.6 [-14.0, -7.3] MW)  | -22%                    | -5%              | -11%               |
+| 2025-26 (test)        | -17% (-14.5 [-18.0, -11.6] MW) | -23%                    | -8%              | -12%               |
+| 2021-22 (robustness)  | -14% (-9.8 [-12.5, -7.2] MW)   | -14%                    | -5%              | -12%               |
 
 - With 16 weeks the cold-snap bias falls from +41 to +7 MW, and the cold-snap misses become 10.0% above and 8.4% below.
 - TimesFM 3.0 gains in every winter too (8-12%), less than Timestral, and more than Chronos-2 in four of the five (about equal in 2022-23).
 - 8 weeks (1,344 h) on the test winter: -13%.
 - 32 weeks (5,376 h) gives no further gain. On the calibration winter it reaches -13.9% vs 4 weeks against -12.5% for 16 weeks (cold snaps -21% vs -22%), and on the test winter -17.0% against -17.2% (cold snaps -22% vs -23%), at about twice the CPU time (7.7-8.6 vs 3.6-3.7 s per forecast). Chronos-2 is slightly worse at 32 than at 16 weeks in both winters.
 - 16 weeks costs 3.6 s instead of 1.4 s per forecast on a laptop CPU, which is nothing for one forecast per zone per day. Chronos-2's maximum context is 8,192 h, Timestral's 32,768 h.
+
+#### Consecutive-day bootstrap sensitivity (technical review)
+
+I reran the headline comparisons from cached forecasts with 1-, 3- and 7-day non-circular moving blocks, with 1,000 resamples for each method (seed 0). Every draw keeps models and zones paired. For pooled comparisons, blocks and sample sizes stay within each winter. Calendar gaps remain gaps; they do not join nonconsecutive days. All three methods are reported in `results/tables/review_bootstrap.*`; none was selected according to its result.
+
+The overall conclusions survive every block length: Timestral's 16-week context improves MAE in each of five winters, including cold-snap hours, and its 16-week forecasts beat Chronos-2 and TimesFM in overall MAE in all five observed-temperature winters and all four real-weather-forecast winters. Test-winter differences (MW), with 95% intervals:
+
+| Comparison | Difference | 1-day blocks | 3-day blocks | 7-day blocks |
+|---|---:|---|---|---|
+| Timestral, 16 minus 4 weeks | -14.5 | [-18.0, -11.6] | [-18.3, -10.9] | [-18.9, -10.9] |
+| Chronos-2 minus Timestral, observed temperature | +6.8 | [+4.0, +9.4] | [+4.1, +9.7] | [+4.2, +9.5] |
+| TimesFM minus Timestral, observed temperature | +6.0 | [+3.8, +8.4] | [+3.5, +8.4] | [+3.5, +8.8] |
+| Chronos-2 minus Timestral, real weather forecast | +6.0 | [+3.1, +9.0] | [+3.0, +9.5] | [+2.2, +10.0] |
+| TimesFM minus Timestral, real weather forecast | +5.9 | [+3.4, +8.5] | [+3.0, +8.8] | [+2.7, +9.4] |
+
+![Paired test-winter MAE differences with 1-, 3- and 7-day bootstrap blocks](results/figures/bootstrap_sensitivity.png)
+
+Secondary significance claims depend on block length. At four weeks in 2024-25, the TimesFM-minus-Timestral interval includes zero with one-day blocks (-0.1 to +6.4 MW), but excludes it with 3- and 7-day blocks (about +0.1 to +6.3/+6.8 MW). This does not establish equivalence at short context. Chronos-2's test-winter cold-snap gain from longer context excludes zero with one-day blocks, but not with 3 or 7. Other cold-snap comparisons also change classification; the complete table preserves them all. These intervals condition on the winters and comparisons observed; they do not correct for post hoc context selection or multiple comparisons, or quantify uncertainty over unseen winters.
+
+The review also corrected forecast pairing to include origin as well as zone and target hour: fixed 24-hour target windows overlap at the spring DST transition. This avoids cross-pairing forecasts from different origins.
 
 ### 4. Second fix: one-sided recalibration by temperature
 
@@ -236,7 +270,7 @@ The fix calibrates each end of the 80% and 90% bands on its own (Q_hi from y - q
 
 ### 5. Real weather forecasts
 
-The main runs use observed temperature, which amounts to a perfect weather forecast. Here Timestral, Chronos-2 and TimesFM 3.0 get the forecast an operator actually has at noon the day before: the archived 06 UTC MET Nordic run (149 test days).
+The main runs use observed temperature, which amounts to a perfect weather forecast. Here Timestral, Chronos-2 and TimesFM 3.0 get the archived MET Nordic forecast selected for the noon-before origin: the nominal 06 UTC slot, with an older 00 UTC fallback (149 test days). Initialisation times are recorded; exact publication times were not reconstructed.
 
 How wrong was the weather forecast? Error of the forecast day-mean temperature against the station:
 
@@ -266,17 +300,35 @@ The recalibration has to be fitted on forecasts made with the weather forecast t
 
 ![Timestral's 80% band misses on cold-snap days with measured temperature, with the real MET forecast, and after one-sided recalibration, for the test winter and for four winters](results/figures/real_forecast_bands.png)
 
-| Timestral, real MET forecast | 80% coverage | Above / below, cold snaps | Above / below, below -10 °C | Band width |
-|---|---|---|---|---|
-| Test winter, no fix | 0.76 | 16.4% / 10.2% | 28% / 7% | 218 MW |
-| Test winter, one-sided, fit on 2022-25 | **0.81** | **8.3% / 7.2%** | 25% [7, 45] / 3% | 244 MW |
-| 4 winters (leave one out), no fix | 0.75 | 24.4% / 7.9% | 29% / 9% | 214 MW |
-| 4 winters (leave one out), one-sided | **0.80** | **14.3% [11, 17] / 5.9%** | 19% [13, 27] / 6% | 238 MW |
+| Timestral, real MET forecast           |   80% coverage | Above / below, cold snaps   | Above / below, below -10 °C   | Band width   |
+|:---------------------------------------|---------------:|:----------------------------|:------------------------------|:-------------|
+| Test winter, no fix                    |           0.76 | 16.4% / 10.2%               | 28% / 7%                      | 218 MW       |
+| Test winter, one-sided, fit on 2022-25 |           0.81 | 8.3% / 7.2%                 | 25% [8, 47] / 3%              | 244 MW       |
+| 4 winters (leave one out), no fix      |           0.74 | 24.4% / 7.9%                | 29% / 9%                      | 214 MW       |
+| 4 winters (leave one out), one-sided   |           0.8  | 14.3% [11, 17] / 5.9%       | 19% [13, 27] / 6%             | 238 MW       |
 
 - On the test winter the fix works: coverage is back on target and the cold-snap misses are balanced, at the cost of bands about 12% wider.
 - Over four winters it only partly works. It cuts the share of cold-snap hours above the band from 24% to 14%, not to 10%, and below -10 °C (74 zone-days) from 29% to 19%. Chronos-2 and TimesFM 3.0 are similar (cold snaps 31% to 13% and 21% to 14%). The temperature bias correction does no better (20% / 11%).
 - The reason is that the weather forecast misses the cold. On cold-snap days the day-ahead forecast was 1.0-1.7 °C too mild in three of the four winters (0.5 °C in the test winter, which is why the test winter looks fixed), and 1.5-3.9 °C too mild on days below -10 °C. A correction chosen by forecast temperature can't see cold the weather forecast didn't predict.
 - Two things might close the gap, neither tested here: correcting the weather forecast's cold bias before it enters the load model, or using ensemble weather forecasts so the bands carry weather uncertainty.
+
+#### Calibration intervals with longer day blocks
+
+The miss-rate conclusions also survive 1-, 3- and 7-day blocks. After one-sided temperature-bin recalibration, the observed-temperature cold-snap tail intervals contain the 10% target for all three models at 16 weeks. That is compatibility with the target, not a guarantee of calibration on unseen weather. With real forecasts, cold-snap and deep-cold upper misses remain above 10% at all three block lengths, for Timestral, Chronos-2 and TimesFM.
+
+| Timestral, 16 weeks, four left-out winters   |   Block days | Above band, % [95% CI]   | Below band, % [95% CI]   |
+|:---------------------------------------------|-------------:|:-------------------------|:-------------------------|
+| Observed temperature, cold snaps             |            1 | 9.6 [7.3, 12.4]          | 9.7 [7.6, 11.9]          |
+| Observed temperature, cold snaps             |            3 | 9.6 [7.0, 12.2]          | 9.7 [7.6, 12.0]          |
+| Observed temperature, cold snaps             |            7 | 9.6 [6.9, 11.9]          | 9.7 [7.8, 12.7]          |
+| Real forecast, cold snaps                    |            1 | 14.3 [11.1, 17.5]        | 5.9 [4.2, 7.8]           |
+| Real forecast, cold snaps                    |            3 | 14.3 [11.1, 17.5]        | 5.9 [4.1, 8.1]           |
+| Real forecast, cold snaps                    |            7 | 14.3 [11.4, 16.8]        | 5.9 [4.0, 8.4]           |
+| Real forecast, below -10 °C                  |            1 | 19.4 [12.8, 27.0]        | 6.0 [3.2, 9.0]           |
+| Real forecast, below -10 °C                  |            3 | 19.4 [12.6, 28.3]        | 6.0 [3.5, 9.2]           |
+| Real forecast, below -10 °C                  |            7 | 19.4 [13.7, 31.3]        | 6.0 [3.3, 9.3]           |
+
+The complete `results/tables/review_calibration_bootstrap.*` has 567 rows, including both context lengths with observed weather and the test-winter and retrospective leave-one-winter-out fits. Draws retain models/zones together and stay within winters. These intervals condition on the existing fitted corrections; calibration coefficients are not refitted in each replicate.
 
 ### 6. Comparison with the other models
 
@@ -302,20 +354,20 @@ All five zones, 18,120 hours (3,216 cold-snap hours), 16 weeks of history for th
 
 Timestral vs Chronos-2, paired, 16 weeks, per winter:
 
-| Winter | MAE, all hours | MAE, cold snaps |
-|---|---|---|
-| 2022-23 | -5.3% [-3.5 MW: -5.6, -1.6] | -3% [-2.2 MW: -7.9, +4.4] |
-| 2023-24 | -12.3% [-9.2 MW: -11.8, -6.7] | -9% [-7.9 MW: -14.3, -1.3] |
-| 2024-25 | -7.9% [-6.4 MW: -9.7, -3.4] | -10% [-8.0 MW: -15.8, +0.3] |
-| 2025-26 (test) | -8.9% [-6.8 MW: -9.4, -4.0] | -16% [-13.0 MW: -20.0, -6.4] |
-| 2021-22 | -9.1% [-5.9 MW: -8.4, -3.3] | -18% [-13.6 MW: -26.7, -2.4] |
-| 2025-26, real MET forecast | -7.3% [-6.0 MW: -8.9, -3.3] | -9% [-8.7 MW: -17.8, +0.8] |
+| Winter                     | MAE, all hours                 | MAE, cold snaps                 |
+|:---------------------------|:-------------------------------|:--------------------------------|
+| 2022-23                    | -5.3% (-3.5 [-5.6, -1.6] MW)   | -3.4% (-2.2 [-7.9, +4.6] MW)    |
+| 2023-24                    | -12.3% (-9.2 [-11.8, -6.6] MW) | -9.0% (-7.9 [-14.0, -0.4] MW)   |
+| 2024-25 (calibration)      | -7.9% (-6.4 [-9.7, -3.4] MW)   | -9.6% (-8.0 [-16.9, +0.8] MW)   |
+| 2025-26 (test)             | -8.9% (-6.8 [-9.4, -4.0] MW)   | -15.9% (-13.0 [-19.9, -6.0] MW) |
+| 2021-22 (robustness)       | -9.1% (-5.9 [-8.4, -3.3] MW)   | -18.4% (-13.6 [-27.3, -1.2] MW) |
+| 2025-26, real MET forecast | -7.3% (-6.0 [-9.0, -3.1] MW)   | -9.1% (-8.7 [-17.9, +0.4] MW)   |
 
-Timestral is better in every winter, and in every zone of the test winter. The overall difference is clear in each winter, the cold-snap difference in 3 of 5.
+Timestral has lower overall MAE in every winter, and in every zone of the test winter. The overall difference excludes zero with all three block lengths. The cold-snap difference excludes zero in 3 of 5 winters under the original one-day method; that classification depends on block length (see the sensitivity check).
 
 On cold-snap days, Timestral's upper band (q0.90) covers the actual peak-hour load on 89% of days (target 90%), against 93% for TimesFM 3.0 (a slightly wider band), 64% for Chronos-2 and 35% for LightGBM.
 
-The reserve margin is the MW an operator would hold above the forecast daily peak to cover the actual peak on 9 days out of 10, summed over the five zones (`results/tables/reserve`):
+The reserve margins below are retrospective estimates: the 90th percentiles of daily peak errors on the test period, computed separately per zone and summed (`results/tables/reserve`). They describe these test-period errors; a margin fitted on earlier winters still needs evaluation on unseen days before it can support a reserve policy. They are not a guarantee of joint 90% coverage across all five zones.
 
 | | Measured temperature | Real MET forecast |
 |---|---:|---:|
@@ -324,7 +376,7 @@ The reserve margin is the MW an operator would hold above the forecast daily pea
 | TimesFM 3.0, 16 weeks | 641 MW [563, 759] | 745 MW [666, 854] |
 | Statnett's published forecast | | 1,030 MW [869, 1,235] |
 
-TimesFM 3.0 needs a margin close to Timestral's, with measured temperature and with real forecasts: the intervals overlap.
+The retrospective margin estimates for TimesFM 3.0 and Timestral are close, with measured temperature and with real forecasts; the intervals overlap.
 
 #### Two more foundation models
 
@@ -337,36 +389,39 @@ I added Google's TimesFM 3.0 and Salesforce's Moirai 2.0 after the main study, w
 | Chronos-2 | 83.4 | 76.5 | -8% | +36 → +32 MW | 0.55 → 0.55 |
 | Moirai 2.0 | 178.0 | 296.4 | +67% | +162 → +372 MW | 0.02 → 0.00 |
 
-- With 4 weeks of history, Timestral, TimesFM and Chronos-2 are statistically tied in every winter (table below; Chronos-2 minus Timestral between -0.9 and +2.0 MW, every interval including zero). With 16 weeks Timestral is ahead of TimesFM in all five winters, by 5-8%, and with real weather forecasts in all four that have them, by 4-7%. In cold snaps the gap is small and no interval excludes zero (test winter +4.4 MW [-2.2, +10.5]).
+- With 4 weeks of history, the original one-day intervals for Timestral versus TimesFM and Chronos-2 include zero in every winter (table below). This is not an equivalence test; for TimesFM in 2024-25, the 3- and 7-day intervals exclude zero. With 16 weeks Timestral is ahead of TimesFM in all five winters, by 5-8%, and with real weather forecasts in all four that have them, by 4-7%; these overall differences survive all three block lengths. The observed-temperature cold-snap gaps are less clear (test winter +4.4 MW [-2.2, +10.5], one-day interval).
 
-| TimesFM 3.0 minus Timestral, MAE (MW) [95% CI], positive = Timestral better | 4 weeks | 16 weeks | 16 weeks, real MET forecast |
-|---|---|---|---|
-| 2022-23 | -0.8 [-4.1, +2.2] | +3.0 [+1.2, +4.9] | +2.6 [+0.6, +4.6] |
-| 2023-24 | +2.2 [-1.1, +5.3] | +5.9 [+3.7, +8.0] | +4.9 [+2.5, +7.2] |
-| 2024-25 (calibration) | +3.3 [-0.1, +6.4] | +4.2 [+1.8, +6.7] | +3.1 [+0.6, +5.7] |
-| 2025-26 (test) | +1.8 [-1.8, +5.0] | +6.0 [+3.8, +8.4] | +5.9 [+3.6, +8.5] |
-| 2021-22 (robustness) | +1.9 [-1.0, +5.0] | +2.9 [+0.8, +5.1] | no forecast archive |
+| TimesFM 3.0 minus Timestral, MW [95% CI]   | 4 weeks           | 16 weeks          | 16 weeks, real MET forecast   |
+|:-------------------------------------------|:------------------|:------------------|:------------------------------|
+| 2022-23                                    | -0.8 [-4.1, +2.2] | +3.0 [+1.2, +4.9] | +2.6 [+0.6, +4.6]             |
+| 2023-24                                    | +2.2 [-1.1, +5.3] | +5.9 [+3.7, +8.0] | +4.9 [+2.6, +7.1]             |
+| 2024-25 (calibration)                      | +3.3 [-0.1, +6.4] | +4.2 [+1.8, +6.6] | +3.1 [+0.6, +5.7]             |
+| 2025-26 (test)                             | +1.8 [-1.8, +5.0] | +6.0 [+3.8, +8.4] | +5.9 [+3.4, +8.5]             |
+| 2021-22 (robustness)                       | +1.9 [-1.0, +5.0] | +2.9 [+0.8, +5.1] | no forecast archive           |
 
 - TimesFM's 80% band is calibrated too (coverage 0.81 at 16 weeks; on cold-snap days 7.3% above and 4.8% below the band, so slightly wide).
-- Without temperature, Moirai 2.0 is in the same range as the other models' load-only forecasts (128 MW against 114-118). Given temperature through its covariate input it gets much worse, and its forecast does not move when the future temperature changes. I found the same on synthetic load with a known slope. Its documentation does not claim covariate support, so I read this as an input that exists in the code but isn't usable, not as a verdict on Moirai's forecasting in general.
+- Without temperature, Moirai 2.0 is in the same range as the other models' load-only forecasts (128 MW against 114-118). Given temperature through its covariate input it gets much worse, and its forecast changes very little when the future temperature changes. I found the same on synthetic load with a known slope. Its documentation does not claim covariate support, so I read this as an input that exists in the code but isn't usable, not as a verdict on Moirai's forecasting in general.
 - The models differ in how much they learn the temperature effect from the history window: Timestral most, TimesFM less, Chronos-2 hardly at all. Timestral's lead depends on giving it the longer window.
 
 #### Statnett's day-ahead forecast
 
-Statnett, Norway's transmission system operator, publishes a day-ahead load forecast for each bidding zone on the ENTSO-E Transparency Platform, at the latest by 10:00 CET the day before. That is two hours before my forecasts are made, for the same day-ahead decision, and it is also made with real weather forecasts, so I compare it with the real-forecast runs. It forecasts total load, which includes grid losses, so I scaled it to Elhub's level with one factor per zone: Elhub over ENTSO-E actual load on the calibration winter (0.93-0.96). I fixed this method before looking at any result. Every model is scored on the same hours (`statnett_*` tables):
+Statnett, Norway's transmission system operator, publishes a day-ahead load forecast for each bidding zone on the ENTSO-E Transparency Platform, with a stated deadline of 10:00 CET the day before. These experiments instead use load up to noon local time. The information sets and forecast timing differ, so this is not an equal-information comparison. I compare Statnett with the real-weather-forecast runs. It forecasts total load including grid losses, while our target is Elhub metered consumption. I scale it with one factor per zone: Elhub over ENTSO-E actual load on the calibration winter (0.93-0.96), fixing this method before examining the comparison. The API retrieval does not reconstruct the publication/revision history at each origin. Every model is scored on the same forecast-origin, zone and target-hour keys (`statnett_*` tables):
 
-| MAE (MW), real weather forecasts | Statnett | Timestral | Timestral minus Statnett [95% CI] | Chronos-2 | TimesFM 3.0 |
-|---|---:|---:|---|---:|---:|
-| 2022-23 | 136.4 | 71.6 | -64.7 [-74.2, -56.3] | 74.9 | 74.2 |
-| 2023-24 | 86.6 | 78.0 | -8.6 [-15.8, -2.0] | 86.1 | 82.8 |
-| 2024-25 | 114.5 | 83.7 | -30.7 [-37.8, -23.3] | 88.9 | 86.9 |
-| 2025-26 (test) | 128.3 | 76.5 | -51.7 [-61.2, -41.7] | 82.6 | 82.4 |
-| All four, pooled | | | -38.9 [-43.5, -34.5] | | |
+The timing statement follows [ENTSO-E's publication rule](https://eepublicdownloads.entsoe.eu/clean-documents/Transparency/MoP_Ref2_DDD_v3r4.pdf) and [Nord Pool's regular noon gate closure](https://www.nordpoolgroup.com/en/the-power-market/Day-ahead-market/); it is not publication metadata from the downloaded series. Statnett's copied `origin_utc` key labels our evaluation window, not its issue time. A strict as-of comparison would require publication/revision vintages.
 
-- Timestral was more accurate than Statnett's published forecast in all four winters, by 10-48%, and in cold snaps pooled over the four winters (-51.4 [-68.7, -35.2] MW), though not in the cold snaps of 2023-24 (+7.6 [-9.6, +28.7]). Chronos-2 and TimesFM 3.0 with the same weather forecasts also beat it, except in 2023-24, where the difference includes zero. In the test winter Statnett had the larger error in every zone.
+The fixed 2024-25 scaling factors precede the test winter but postdate the two earlier benchmark winters. Those earlier comparisons are retrospective target alignment, not fully as-of historical backtests.
+
+| Winter, MAE (MW), real weather forecasts   |   Statnett |   Timestral |   Chronos-2 |   TimesFM 3.0 | Timestral minus Statnett [95% CI]   |
+|:-------------------------------------------|-----------:|------------:|------------:|--------------:|:------------------------------------|
+| 2022-23                                    |      136.4 |        71.6 |        74.9 |          74.2 | -64.8 [-74.5, -56.4]                |
+| 2023-24                                    |       86.6 |        78   |        86.1 |          82.8 | -8.6 [-16.1, -1.5]                  |
+| 2024-25 (calibration)                      |      114.5 |        83.7 |        88.9 |          86.9 | -30.8 [-38.1, -23.5]                |
+| 2025-26 (test)                             |      128.3 |        76.5 |        82.5 |          82.4 | -51.8 [-61.1, -42.0]                |
+
+- Timestral was more accurate than Statnett's published forecast in all four winters, by 10-48%, and in cold snaps pooled over the four winters (-51.4 [-67.1, -35.3] MW), though not in the cold snaps of 2023-24 (+7.6 [-9.8, +26.1] MW). Chronos-2 and TimesFM 3.0 with the same weather forecasts also beat it, except in 2023-24, where the difference includes zero. In the test winter Statnett had the larger error in every zone.
 - By zone the picture is mixed. In NO1, the largest zone, Statnett's forecast was better than every model here in the three earlier winters: MAE 72, 100 and 115 MW in 2022-23, 2023-24 and 2024-25, against 117, 144 and 147 MW for Timestral with real weather forecasts (92, 104 and 117 MW even with measured temperature). Only the test winter went the other way (188 against 130 MW). Statnett's larger overall error comes from big misses in other zones, for example NO2 and NO5 in 2022-23 (257 and 202 MW, against 98 and 40 MW for Timestral).
 - It isn't a timing or level problem in the data. Moving Statnett's forecast by up to three hours lowers its error by at most 1.5 MW averaged over the zones (4.8 MW in the worst single case, NO4 in 2022-23), and removing each zone's average error per winter, which uses that winter's own actuals and so favours Statnett, leaves 78-136 MW (`statnett_checks`). Scored against its own target, ENTSO-E total load, its MAPE is 2.5-4.6%, against 2.0-2.3% for Timestral on Elhub. Where it does worst, the forecast doesn't follow the hourly pattern: for NO5 in 2022-23 its correlation with the actual load was 0.51.
-- To cover the daily peak on 9 days in 10 in the test winter, Statnett's forecast needs 1,030 MW of margin [869, 1,235], against 698 MW for Timestral with real weather forecasts.
+- Retrospective test-period estimates of the summed zone margins are 1,030 MW [869, 1,235] for Statnett and 698 MW for Timestral with real weather forecasts. These margins were calculated from the same period's errors, rather than fitted earlier and validated here.
 - What this doesn't show: this is the forecast Statnett publishes under EU transparency rules, and Statnett may operate on a different one. My models also see the load up to noon, which needs real-time measurements, while Statnett's forecast is due two hours earlier.
 
 ### 7. Robustness checks
@@ -388,22 +443,22 @@ They do. Timestral is more accurate than TimesFM 3.0 and Chronos-2 and better ca
 
 Each zone also got a population-weighted temperature from 3-5 stations, one per main town (for NO2: Stavanger, Kristiansand, Arendal). The rule was fixed before any run: the nearest non-road station within 25 km with under 2% missing and under 2% gap-filled hours, weighted by rough regional population. Skien had no station passing the rule and was dropped, and two of the points are coastal lighthouses (`results/tables/stations_multi.csv`).
 
-| 16 weeks | MAE, one station → several | Change [95% CI] | Cold snaps | 80% coverage |
-|---|---|---|---|---|
-| Timestral, test winter | 69.8 → 66.5 MW | -4.7% [-3.3 MW: -5.4, -1.5] | -6.0% [-4.1 MW: -9.9, +1.4] | 0.80 → 0.79 |
-| Chronos-2, test winter | 76.5 → 73.9 MW | -3.4% [-2.6 MW: -4.5, -0.8] | -4.8% [-3.9 MW: -9.2, +0.8] | 0.75 → 0.74 |
-| Timestral, calibration winter | 73.9 → 70.0 MW | -5.3% [-3.9 MW: -5.4, -2.2] | -1.6% [-1.2 MW: -7.1, +5.0] | 0.80 → 0.80 |
-| Chronos-2, calibration winter | 80.2 → 75.7 MW | -5.6% [-4.5 MW: -6.3, -2.7] | -4.6% [-3.8 MW: -10.9, +3.8] | 0.77 → 0.77 |
-| TimesFM 3.0, test winter | 75.8 → 72.7 MW | -4.1% [-3.1 MW: -4.9, -1.3] | -2.2% [-1.6 MW: -5.7, +2.4] | 0.81 → 0.82 |
-| TimesFM 3.0, calibration winter | 78.1 → 74.7 MW | -4.3% [-3.3 MW: -5.2, -1.4] | -5.1% [-4.2 MW: -9.6, +3.2] | 0.81 → 0.81 |
+| 16 weeks                        | MAE, one station → several   | Change [95% CI]              | Cold snaps                    | 80% coverage   |
+|:--------------------------------|:-----------------------------|:-----------------------------|:------------------------------|:---------------|
+| Timestral, test winter          | 69.8 → 66.5 MW               | -4.7% (-3.3 MW [-5.4, -1.5]) | -6.0% (-4.1 MW [-10.2, +1.5]) | 0.80 → 0.79    |
+| Timestral, calibration winter   | 73.9 → 70.0 MW               | -5.3% (-3.9 MW [-5.4, -2.2]) | -1.6% (-1.2 MW [-7.4, +5.3])  | 0.80 → 0.80    |
+| Chronos-2, test winter          | 76.5 → 73.9 MW               | -3.4% (-2.6 MW [-4.5, -0.8]) | -4.8% (-3.9 MW [-9.1, +0.5])  | 0.75 → 0.74    |
+| Chronos-2, calibration winter   | 80.2 → 75.7 MW               | -5.6% (-4.5 MW [-6.3, -2.7]) | -4.6% (-3.8 MW [-12.0, +4.1]) | 0.77 → 0.77    |
+| TimesFM 3.0, test winter        | 75.8 → 72.7 MW               | -4.1% (-3.1 MW [-4.9, -1.3]) | -2.2% (-1.6 MW [-5.7, +2.6])  | 0.81 → 0.82    |
+| TimesFM 3.0, calibration winter | 78.1 → 74.7 MW               | -4.3% (-3.3 MW [-5.2, -1.4]) | -5.1% (-4.2 MW [-10.2, +3.0]) | 0.81 → 0.81    |
 
 The gain is small and consistent, 3-6% in both winters for all three models (in the test winter in every zone), and it changes no conclusion, so the main results stay on the single stations chosen at the start. The cold-snap gain is not significant in either winter.
 
 ## Appendix: secondary results
 
-**A. Synthetic weather-forecast error** (one N(0, 1.5 °C) offset per zone-day). At 16 weeks it costs Timestral +15.3 MW [+11.7, +18.9] and drops coverage from 0.80 to 0.71. At 4 weeks it costs only +5.6 MW, so a model that leans harder on temperature is hurt more by a wrong one. Real forecasts cost less overall (+6.6 MW) but about as much in cold snaps (`covariates`).
+**A. Synthetic weather-forecast error** (one N(0, 1.5 °C) offset per zone-day). At 16 weeks it costs Timestral +15.3 MW [+11.7, +18.8] and drops coverage from 0.80 to 0.71. At 4 weeks it costs only +5.6 MW, so a model that leans harder on temperature is hurt more by a wrong one. Real forecasts cost less overall (+6.6 MW) but about as much in cold snaps (`covariates`).
 
-**B. Daily peaks on cold-snap days (134 zone-days).** Share of days with the actual peak-hour load above q0.90 (target 10%): Timestral 16 weeks 11% [6, 17], 4 weeks 25%, Chronos-2 36%, LightGBM 65%, TimesFM 3.0 7% [3, 13]. Peak bias: +21, +62, +70, +102 and +19 MW. Timestral gets the peak hour right (within ±1 h) on 79% of days (`peaks`).
+**B. Daily peaks on cold-snap days (134 zone-days).** Share of days with the actual peak-hour load above q0.90 (target 10%): Timestral 16 weeks 11% [6, 17], 4 weeks 25%, Chronos-2 36%, LightGBM 65%, TimesFM 3.0 7% [3, 14]. Peak bias: +21, +62, +70, +102, +19 MW. Timestral gets the peak hour right (within ±1 h) on 79% of days (`peaks`).
 
 **C. Temperature bias correction.** Relative error of the median = a + b·max(0, 0 °C - T_day), fitted by least squares on earlier winters, with the shift applied to all quantiles.
 
@@ -414,15 +469,15 @@ The gain is small and consistent, 3-6% in both winters for all three models (in 
 | Chronos-2, no fix | +36 MW | 89.5 | 19.9% / 7.3% | 28.3% / 10.1% |
 | Chronos-2 + correction | -3 MW | 85.7 | 10.9% / 14.0% | 13.1% / 16.4% |
 
-Fitting on the single mild calibration winter over-corrects (Timestral cold bias -43 MW), which is why the 3-winter fit became the main one. With leave-one-winter-out (4 winters, 395 cold zone-days), Timestral at 4 weeks goes from +53 to +3 MW (cold-snap MAE -8.1 MW [-13.6, -2.8]) and Chronos-2 at 4 weeks from +42 to +2 MW (-4.2 MW [-8.1, -0.0]). At 16 weeks Timestral's fitted slope is near zero, so there is nothing left to fix. The 5-winter version gives the same picture.
+Fitting on the single mild calibration winter over-corrects (Timestral cold bias -43 MW), which is why the 3-winter fit became the main one. With retrospective leave-one-winter-out (4 winters, 395 cold zone-days), Timestral at 4 weeks goes from +53 to +3 MW (cold-snap MAE -8.1 MW [-13.3, -2.2]) and Chronos-2 from +42 to +2 MW (-4.2 MW [-8.4, +0.5]). Chronos-2's interval includes zero after the pairing and within-winter bootstrap corrections. At 16 weeks Timestral's fitted slope is near zero, so there is little bias left to fix. The five-winter version gives the same qualitative picture; these folds can fit on later winters.
 
 **D. Adaptive conformal inference** (daily updates, 2-day feedback delay). It gets overall 80% coverage right (Chronos-2, 4 weeks: 0.75 to 0.80), but in cold snaps the misses stay one-sided (Timestral, 4 weeks: 16% above, 5% below). At 16 weeks Timestral needs neither ACI nor CQR: static CQR moves its coverage from 0.795 to 0.798.
 
-**E. Holidays.** Over Christmas and New Year the models over-forecast (Timestral, 16 weeks: bias -41 MW, coverage 0.65). A 0/1 holiday covariate doesn't help (4 weeks, 39 holiday days over 4 winters: +0.3 MW [-1.6, +2.4]). A shift by holiday type learned from other winters (Christmas, the days between Christmas and New Year (romjul), New Year, other) cuts the holiday error by about 10% (-9.6%, -10.0 MW [-20.8, +1.1]). With effectively four Christmases the interval includes zero, so this is suggestive but not established.
+**E. Holidays.** Over Christmas and New Year the models over-forecast (Timestral, 16 weeks, test winter: bias -41 MW, coverage 0.65). A 0/1 holiday covariate doesn't help on holidays (4 weeks, 39 holiday days over four winters: +0.3 MW [-1.8, +2.5]). A retrospective shift by holiday type learned from other winters (Christmas, romjul, New Year, other) changes holiday MAE by -9.6% (-10.0 MW [-19.9, +0.3]). With effectively four Christmases the interval includes zero, so this is suggestive but not established.
 
 **F. Model size** (Timestral + temp, 4 weeks, test winter): 5M 108.9 MW, 28M 96.6, 123M 86.4, 209M 84.3, at 0.04, 0.18, 0.73 and 1.37 s of CPU per forecast. 123M gets almost all the accuracy at half the cost. At 16 weeks (test winter), 123M reaches 72.0 MW and 209M 69.8 MW (cold snaps 70.8 vs 68.8, coverage 0.78 vs 0.80).
 
-**G. A simple ensemble doesn't help.** Averaging Timestral's and Chronos-2's quantiles beats Chronos-2 in every winter but not Timestral alone (+1.1 MW [-0.3, +2.4] on the test winter), and it brings back part of Chronos-2's cold bias.
+**G. A simple ensemble doesn't help.** Averaging Timestral's and Chronos-2's quantiles beats Chronos-2 in every winter but not Timestral alone (+1.1 MW [-0.2, +2.4] on the test winter), and it brings back part of Chronos-2's cold bias.
 
 ## Decisions made after seeing test data
 
@@ -486,7 +541,7 @@ The run scripts are the record of what was run, in this order. Each model and wi
 | `run_experiments.sh` | Midnight origin, 4 weeks: baselines, Timestral and Chronos-2, holiday flag, noisy temperature, model sizes |
 | `run_noon.sh` | Main origin (noon the day before), 4 weeks: baselines, Timestral and Chronos-2, noisy temperature, extra winters, holiday flag |
 | `run_overnight.sh` | Extra winters, noisy temperature, model sizes, 8/16-week sensitivity runs |
-| `run_context.sh` | 16 weeks on the calibration winters (the context choice, made without the test winter) |
+| `run_context.sh` | 16 weeks on the calibration winters, checked after the gain was first noticed on the test winter |
 | `run_ctx16.sh` | Remaining 16-week runs for the main tables |
 | `run_probe.sh` | The temperature probe (future 3 °C colder), 4 and 16 weeks |
 | `run_ctx32.sh` | Real MET forecasts, 2021-22, several stations, synthetic probe, 32 weeks, probe at 8/32 weeks and for Timestral-123M |
@@ -500,7 +555,7 @@ Everything runs on CPU. Per forecast at 16 weeks: Timestral-209M 3.6 s, TimesFM 
 - Fine-tune on Norwegian load, aimed at cold beyond anything in the history window.
 - Use ensemble weather forecasts to carry weather uncertainty into the load bands.
 - Test further foundation models (for example TiRex).
-- Check the delayed-response explanation on real data, for example by giving the model a smoothed temperature as a second covariate and seeing whether the 4-week under-reaction disappears.
+- Test the delayed-response hypothesis on real data, for example by giving the model a smoothed temperature as a second covariate and checking whether the 4-week under-reaction changes.
 - Holidays: the 0/1 flag doesn't work zero-shot. A "same day last year" covariate might.
 
 ## References

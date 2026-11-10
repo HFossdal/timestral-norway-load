@@ -32,7 +32,11 @@ Usage:
     python -m src.synthetic --report                           # tables + figure
 """
 import argparse
+import hashlib
+import importlib.metadata
+import json
 import logging
+import time
 
 import numpy as np
 import pandas as pd
@@ -49,7 +53,9 @@ MECH_CELLS = [(50, 1.0, "lag"), (50, 1.0, "station")]
 CLEAN_CELL = [(50, 1.0, "none")]  # the clean baseline, for models added after tests A and B (TimesFM 3.0)
 CONTEXTS = [672, 2688]
 H = 24
-OUT = ROOT / "results" / "cache" / "synthetic"
+CACHE_VERSION = "matched-v2"
+SEEDS = (0, 1, 2, 3, 4)
+OUT = ROOT / "results" / "cache" / "synthetic" / CACHE_VERSION
 LAG_ALPHA = 1 / 24  # exponential smoothing per hour: time constant about 24 h
 # Share of a sustained 3 °C drop that reaches the smoothed temperature, averaged over the 24
 # forecast hours: 1 - mean of (1 - alpha)^h for h = 1..24 (about 0.39)
@@ -62,15 +68,30 @@ def christmas(times: pd.DatetimeIndex) -> np.ndarray:
     return ((local.month == 12) & (local.day >= 24)) | ((local.month == 1) & (local.day == 1))
 
 
-def synthetic_load(times: pd.DatetimeIndex, t: np.ndarray, beta: float, seed: int,
+def known_response(beta, conf, origin):
+    """Exact colder-future response while heating is active (checked in build())."""
+    factor = LAG_FACTOR if conf == "lag" else 1.
+    if conf == "christmas":
+        # The Christmas multiplier applies to the temperature term too, and a
+        # 24-hour UTC window can contain only part of a local holiday.
+        factor *= np.where(christmas(pd.date_range(origin, periods=H, freq="h")), .9, 1.).mean()
+    return beta * factor
+
+
+def synthetic_load(times: pd.DatetimeIndex, t: np.ndarray, beta: float, seed: int | np.random.SeedSequence,
                    conf: str = "none") -> np.ndarray:
-    """Profile + beta * heating degrees + AR(1) noise (+ the confounder of test C). Same seed ->
-    same noise, so the plain and the colder forecast share an identical context."""
+    """Generate one common calendar history; build() slices it for all contexts.
+
+    A seed alone cannot align calls with different start dates. Callers must use
+    the same reference calendar, as build() does, before taking suffixes.
+    """
     local = times.tz_convert("Europe/Oslo")
     h, dow = local.hour.values, local.dayofweek.values
     profile = 1 + 0.08 * np.sin(2 * np.pi * (h - 6) / 24) + 0.04 * np.sin(2 * np.pi * (h - 14) / 12)
     profile = profile * np.where(dow >= 5, 0.95, 1.0)
-    rng = np.random.default_rng(seed)
+    streams = seed if isinstance(seed, np.random.SeedSequence) else np.random.SeedSequence(seed)
+    noise_seed, drift_seed = streams.spawn(2)
+    rng = np.random.default_rng(noise_seed)
     e = np.zeros(len(t))
     shocks = rng.normal(0, 30 * np.sqrt(1 - 0.9 ** 2), len(t))
     for i in range(1, len(t)):
@@ -80,7 +101,7 @@ def synthetic_load(times: pd.DatetimeIndex, t: np.ndarray, beta: float, seed: in
         # slow level changes: one AR(1) value per local day (phi 0.95, stationary sd 100 MW)
         day = pd.factorize(local.normalize())[0]
         drift = np.zeros(day.max() + 1)
-        shocks = np.random.default_rng(seed + 10**6).normal(0, 100 * np.sqrt(1 - 0.95 ** 2), len(drift))
+        shocks = np.random.default_rng(drift_seed).normal(0, 100 * np.sqrt(1 - 0.95 ** 2), len(drift))
         for i in range(1, len(drift)):
             drift[i] = 0.95 * drift[i - 1] + shocks[i]
         y = y + drift[day]
@@ -90,44 +111,88 @@ def synthetic_load(times: pd.DatetimeIndex, t: np.ndarray, beta: float, seed: in
 
 
 def build(temp: pd.DataFrame, beta: float, k: float, T: int, conf: str = "none",
-          temp_multi: pd.DataFrame | None = None) -> dict:
+          temp_multi: pd.DataFrame | None = None, seed: int = 0) -> dict:
     """One batch per cell: context load + temperatures, future temperatures plain and colder.
     The model always sees the single-station temperature; for "lag" and "station" the load is
     driven by the smoothed or the several-stations temperature instead."""
+    if T not in CONTEXTS:
+        raise ValueError(f"unsupported context {T}")
+    if conf == "station" and temp_multi is None:
+        raise ValueError("station condition requires temperature_multi.parquet")
     driver = {"lag": temp.ewm(alpha=LAG_ALPHA, adjust=False).mean(), "station": temp_multi}.get(conf)
-    b = {"context": [], "past": [], "future": [], "zone": [], "origin": [], "xmas_in_window": []}
+    # Generate one underlying winter per zone/seed, including the longest history.
+    # Origins and context lengths slice this same process on the same calendar.
+    common = pd.date_range(ORIGINS.min() - pd.Timedelta(hours=max(CONTEXTS)),
+                           ORIGINS.max() - pd.Timedelta(hours=1), freq="h")
+    b = {"context": [], "past": [], "future": [], "zone": [], "origin": [], "xmas_in_window": [], "true_response": []}
     for zi, z in enumerate(ZONES):
+        base_temp = (temp if driver is None else driver).loc[common, z].to_numpy()
+        process_seed = np.random.SeedSequence([seed, zi])
+        base_load = synthetic_load(common, base_temp, beta, process_seed, conf)
         for oi, o in enumerate(ORIGINS):
             past_t = temp.index[(temp.index >= o - pd.Timedelta(hours=T)) & (temp.index < o)]
             tp = temp.loc[past_t, z].values
-            tp = tp.mean() + k * (tp - tp.mean())   # squeeze / stretch the window's temperatures
-            drv = tp if driver is None else driver.loc[past_t, z].values
-            b["context"].append(synthetic_load(past_t, drv, beta, seed=1000 * zi + oi, conf=conf))
+            loc = common.get_indexer(past_t)
+            if len(loc) != T or (loc < 0).any():
+                raise ValueError("incomplete common synthetic history")
+            y = base_load[loc].copy()
+            if k != 1.0:
+                # Keep the intended window-specific mean/range manipulation. Only
+                # the temperature contribution changes; the noise stays matched.
+                if conf != "none":
+                    raise ValueError("range manipulations are defined for the clean condition only")
+                changed = tp.mean() + k * (tp - tp.mean())
+                y += beta * (np.maximum(0, 15 - changed) - np.maximum(0, 15 - tp))
+                tp = changed
+            b["context"].append(y)
             b["xmas_in_window"].append(christmas(past_t).any())
             b["past"].append(tp)
-            b["future"].append(temp.loc[o: o + pd.Timedelta(hours=H - 1), z].values)
+            future_times = pd.date_range(o, periods=H, freq="h")
+            future_driver = (temp if driver is None else driver).loc[future_times, z].values
+            if not np.isfinite(future_driver).all() or (future_driver > 15).any():
+                raise ValueError("known-response normalisation requires complete, heating-active future drivers")
+            b["future"].append(temp.loc[future_times, z].values)
+            b["true_response"].append(known_response(beta, conf, o))
             b["zone"].append(z)
             b["origin"].append(o)
     return {k_: np.array(v) for k_, v in b.items()}
 
 
-def run(model_name: str, temp: pd.DataFrame, cells=CELLS, tag: str = "", temp_multi=None):
+def run(model_name: str, temp: pd.DataFrame, cells=CELLS, tag: str = "", temp_multi=None, seeds=SEEDS):
     from src.models import Chronos2, Timestral, TimesFM3
-    model = {"timestral-209m": lambda: Timestral("209M", covariates=("temp",)),
+    constructors = {"timestral-209m": lambda: Timestral("209M", covariates=("temp",)),
              "chronos2": lambda: Chronos2(covariates=("temp",)),
-             "timesfm3": lambda: TimesFM3(covariates=("temp",))}[model_name]()
-    out = OUT / f"{model_name}{tag}.parquet"
+             "timesfm3": lambda: TimesFM3(covariates=("temp",))}
+    model = None
+    out = OUT / f"{model_name}.parquet"
     # saved after every cell, and finished cells are skipped, so an interrupted run resumes
     rows = [pd.read_parquet(out)] if out.exists() else []
-    if rows and "confounder" not in rows[0]:  # A + B files predate the confounder column
-        rows[0]["confounder"] = "none"
-    done = set(zip(rows[0]["context_h"], rows[0]["beta"], rows[0]["k"], rows[0]["confounder"])) if rows else set()
+    keys = ["context_h", "beta", "k", "confounder", "seed"]
+    if rows:
+        if set(rows[0].cache_version) != {CACHE_VERSION}:
+            raise ValueError("incompatible synthetic cache")
+        counts = rows[0].groupby(keys).size()
+        if (not counts.eq(len(ZONES) * len(ORIGINS)).all() or
+                rows[0].duplicated(keys + ["zone", "origin"]).any()):
+            raise ValueError("incomplete cached cell")
+    done = set(map(tuple, rows[0][keys].drop_duplicates().values)) if rows else set()
     OUT.mkdir(parents=True, exist_ok=True)
     for T in CONTEXTS:
-        for beta, k, conf in cells:
-            if (T, beta, k, conf) in done:
+        for beta, k, conf, seed in [(beta, k, conf, seed) for beta, k, conf in cells for seed in seeds]:
+            digest = hashlib.sha256(pd.util.hash_pandas_object(temp, index=True).values.tobytes())
+            if conf == "station":
+                digest.update(pd.util.hash_pandas_object(temp_multi, index=True).values.tobytes())
+            data_hash = digest.hexdigest()
+            if (T, beta, k, conf, seed) in done:
+                old = rows[0][(rows[0].context_h == T) & (rows[0].beta == beta) & (rows[0].k == k) &
+                              (rows[0].confounder == conf) & (rows[0].seed == seed)]
+                if not old.temperature_hash.eq(data_hash).all():
+                    raise ValueError("temperature data changed: use a new cache version")
                 continue
-            b = build(temp, beta, k, T, conf, temp_multi)
+            if model is None:
+                model = constructors[model_name]()
+            started = time.perf_counter()
+            b = build(temp, beta, k, T, conf, temp_multi, seed)
             med = {}
             for name, shift in [("plain", 0.0), ("cold", COLD_SHIFT)]:
                 batch = {"context": b["context"], "cov_past": {"temp": b["past"]},
@@ -137,13 +202,56 @@ def run(model_name: str, temp: pd.DataFrame, cells=CELLS, tag: str = "", temp_mu
             span = [pd.Series(p).groupby(np.arange(len(p)) // 24).mean().agg(lambda s: s.max() - s.min())
                     for p in b["past"]]
             rows.append(pd.DataFrame({"model": model_name, "context_h": T, "beta": beta, "k": k,
-                                      "confounder": conf, "true_response": beta * (LAG_FACTOR if conf == "lag" else 1),
+                                      "confounder": conf, "true_response": b["true_response"],
                                       "zone": b["zone"], "origin": b["origin"],
                                       "response": resp, "window_range": span,
-                                      "xmas_in_window": b["xmas_in_window"]}))
-            log.info("%s T=%d beta=%s k=%s %s: mean response %.1f MW/°C (true %s)", model_name, T, beta, k,
-                     conf, -resp.mean(), beta)
-            pd.concat(rows).to_parquet(out)
+                                      "xmas_in_window": b["xmas_in_window"], "seed": seed,
+                                      "cache_version": CACHE_VERSION, "temperature_hash": data_hash}))
+            log.info("%s T=%d beta=%s k=%s %s seed=%d: response %.2f MW/°C, %.1fs", model_name, T, beta, k,
+                     conf, seed, -resp.mean(), time.perf_counter() - started)
+            pending = out.with_suffix(".parquet.tmp")
+            pd.concat(rows).to_parquet(pending)
+            pending.replace(out)
+
+
+def cluster_summary(g, value="response", n_boot=2000):
+    """Crossed seed/origin bootstrap; zones stay together within each origin.
+
+    Average zones first. Resample seeds and origins independently, sharing each
+    origin draw across all seeds. Context differences are formed before this call.
+    """
+    wide = g.groupby(["seed", "origin"])[value].mean().unstack("origin")
+    if wide.isna().any().any():
+        raise ValueError("unmatched seed/origin grid")
+    v = wide.to_numpy()
+    rng = np.random.default_rng(0)
+    si = rng.integers(len(v), size=(n_boot, len(v)))
+    oi = rng.integers(v.shape[1], size=(n_boot, v.shape[1]))
+    boot = v[si[:, :, None], oi[:, None, :]].mean(axis=(1, 2))
+    seed_means = v.mean(axis=1)
+    lo, hi = np.percentile(boot, [2.5, 97.5])
+    return dict(n=len(g), n_origins=v.shape[1], n_seeds=len(v), response=v.mean(), lo=lo, hi=hi,
+                seed_sd=seed_means.std(ddof=1), seed_min=seed_means.min(), seed_max=seed_means.max())
+
+
+def expected_cells(model):
+    return (CLEAN_CELL if model == "timesfm3" else CELLS) + CONF_CELLS + MECH_CELLS
+
+
+def validate_cache(d):
+    """Fail closed: reports may only use the complete corrected five-seed grid."""
+    keys = ["model", "context_h", "beta", "k", "confounder", "seed", "zone", "origin"]
+    if set(d.cache_version) != {CACHE_VERSION} or d.duplicated(keys).any():
+        raise ValueError("mixed cache versions or duplicate synthetic forecasts")
+    expected = {(m, T, beta, k, conf, seed, z, o)
+                for m in ["timestral-209m", "chronos2", "timesfm3"]
+                for T in CONTEXTS for beta, k, conf in expected_cells(m)
+                for seed in SEEDS for z in ZONES for o in ORIGINS}
+    actual = set(d[keys].itertuples(index=False, name=None))
+    if actual != expected:
+        raise ValueError(f"synthetic grid incomplete: {len(expected - actual)} missing, {len(actual - expected)} unexpected rows")
+    if d[d.confounder != "station"].temperature_hash.nunique() != 1 or d[d.confounder == "station"].temperature_hash.nunique() != 1:
+        raise ValueError("mixed temperature inputs across synthetic caches")
 
 
 def report(cfg):
@@ -154,29 +262,49 @@ def report(cfg):
     import matplotlib.pyplot as plt
     from src.report import COLORS, INK, INK2, save, save_fig, style
 
-    d = pd.concat([pd.read_parquet(f) for f in OUT.glob("*.parquet")])
+    files = sorted(OUT.glob("*.parquet"))
+    if not files:
+        raise ValueError(f"no corrected synthetic caches in {OUT}")
+    d = pd.concat([pd.read_parquet(f) for f in files], ignore_index=True)
+    validate_cache(d)
     d["response"] = -d["response"]  # MW of extra load per °C colder (positive = more load)
     d["confounder"] = d["confounder"].fillna("none") if "confounder" in d else "none"  # A + B files predate C
-    d["true_response"] = d["true_response"].fillna(d["beta"]) if "true_response" in d else d["beta"]
+    # Recompute the analytical reference for every cached row. Earlier matched-v2
+    # checkpoints used base beta for Christmas target hours; correcting reference
+    # metadata does not require repeating inference or changing any inputs.
+    old_reference = d["true_response"].to_numpy().copy()
+    d["true_response"] = [known_response(b, c, o) for b, c, o in zip(d.beta, d.confounder, d.origin)]
+    changed_references = int((~np.isclose(old_reference, d.true_response)).sum())
     # does the window [origin - T, origin) contain 24 Dec - 1 Jan? (same rule for every cell)
     d["xmas_in_window"] = [christmas(pd.date_range(o - pd.Timedelta(hours=T), periods=T, freq="h")).any()
                            for o, T in zip(d["origin"], d["context_h"])]
-    rng = np.random.default_rng(0)
+    # Small auditable output: reviewers can check seed variability and paired
+    # statistics from per-origin responses without repeating model inference.
+    archive = ROOT / cfg["paths"]["results"] / "tables" / "synthetic_responses_matched_v2.csv.gz"
+    archive.parent.mkdir(parents=True, exist_ok=True)
+    order = ["model", "context_h", "beta", "k", "confounder", "seed", "zone", "origin"]
+    d.sort_values(order).rename(columns={"response": "response_mw_per_degree_colder"}).to_csv(
+        archive, index=False, compression={"method": "gzip", "mtime": 0})
 
     def summary(x, by):
         rows = []
         for key, g in x.groupby(by):
-            r = g["response"].values
-            boot = [rng.choice(r, len(r)).mean() for _ in range(1000)]
-            true = g["true_response"].iloc[0]  # beta, or the smaller correct response under "lag"
-            rows.append({**dict(zip(by, key)), "n": len(r), "response": r.mean(),
-                         "lo": np.percentile(boot, 2.5), "hi": np.percentile(boot, 97.5), "true_response": true,
-                         "ratio": r.mean() / true if true else np.nan, "window_range": g["window_range"].mean()})
+            stats = cluster_summary(g)
+            true = g["true_response"].mean()
+            ratio = (g["response"] / g["true_response"].replace(0, np.nan)).mean()
+            rows.append({**dict(zip(by, key)), **stats, "true_response": true,
+                         "ratio": ratio,
+                         "window_range": g["window_range"].mean()})
         return pd.DataFrame(rows)
 
     t = summary(d, ["model", "context_h", "beta", "k", "confounder"])
     save(t.set_index(["model", "context_h", "beta", "k", "confounder"]), "synthetic_probe", cfg)
     print(t.round(2).to_string(index=False))
+    seed_table = d.assign(ratio=d.response / d.true_response.replace(0, np.nan)).groupby(
+        ["model", "context_h", "beta", "k", "confounder", "seed"]).agg(
+        response=("response", "mean"), true_response=("true_response", "mean"),
+        ratio=("ratio", "mean"), n=("response", "size"))
+    save(seed_table, "synthetic_seed_summary", cfg)
     # Test C: beta = 50, k = 1, by confounder, overall and split by Christmas in the window
     c = d[(d["beta"] == 50) & (d["k"] == 1.0)]
     tc = pd.concat([summary(c, ["model", "context_h", "confounder"]).assign(windows="all"),
@@ -190,18 +318,29 @@ def report(cfg):
     rows = []
     for (m, conf), g in c.groupby(["model", "confounder"]):
         r = g.assign(r=g["response"] / g["true_response"]).pivot_table(
-            index=["zone", "origin"], columns="context_h", values="r")
+            index=["zone", "origin", "seed"], columns="context_h", values="r")
         if not {672, 2688} <= set(r.columns):
             continue
-        diff = (r[2688] - r[672]).dropna().values
-        rb = np.random.default_rng(0)
-        boot = [rb.choice(diff, len(diff)).mean() for _ in range(2000)]
-        rows.append({"model": m, "confounder": conf, "n": len(diff), "ratio_4w": r[672].mean(),
-                     "ratio_16w": r[2688].mean(), "change": diff.mean(),
-                     "lo": np.percentile(boot, 2.5), "hi": np.percentile(boot, 97.5)})
+        diff = (r[2688] - r[672]).rename("response").reset_index()
+        stats = cluster_summary(diff)
+        rows.append({"model": m, "confounder": conf, **{k: v for k, v in stats.items() if k != "response"},
+                     "ratio_4w": r[672].mean(), "ratio_16w": r[2688].mean(), "change": stats["response"]})
     ch = pd.DataFrame(rows)
     save(ch.set_index(["model", "confounder"]), "synthetic_length_change", cfg)
     print(ch.round(2).to_string(index=False))
+    # Pair model interactions explicitly; separate model intervals cannot test
+    # whether the context effect differs between models.
+    wide = c.assign(r=c.response / c.true_response).pivot(
+        index=["confounder", "zone", "origin", "seed"], columns=["model", "context_h"], values="r")
+    interactions = []
+    for other in ["chronos2", "timesfm3"]:
+        delta = ((wide["timestral-209m", 2688] - wide["timestral-209m", 672]) -
+                 (wide[other, 2688] - wide[other, 672])).rename("response").reset_index()
+        for conf, g in delta.groupby("confounder"):
+            stats = cluster_summary(g)
+            interactions.append({"comparison": f"Timestral context change minus {other}", "confounder": conf,
+                                 **{("change" if k == "response" else k): v for k, v in stats.items()}})
+    save(pd.DataFrame(interactions).set_index(["comparison", "confounder"]), "synthetic_context_interactions", cfg)
     t = t[t["confounder"] == "none"]  # the figure shows tests A and B
 
     fig, axes = plt.subplots(1, 2, figsize=(10, 4), sharey=True)
@@ -212,11 +351,13 @@ def report(cfg):
             s = t[(t["model"] == m) & (t["context_h"] == T) & (t["k"] == 1.0)]
             ax.errorbar(s["beta"], s["response"], yerr=[s["response"] - s["lo"], s["hi"] - s["response"]],
                         color=c, ls=ls, marker="o", ms=4, capsize=2, label=f"{name}, {T // 168} weeks")
-    # TimesFM 3.0 ran only the beta = 50 cell: squares, drawn 3 MW/°C to the right so they don't hide the others
+    # TimesFM ran beta=50 only. Hollow squares keep the true x coordinate while
+    # remaining distinguishable from the other models' circular markers.
     for T, c in [(672, COLORS[1]), (2688, COLORS[0])]:
         s = t[(t["model"] == "timesfm3") & (t["context_h"] == T) & (t["k"] == 1.0)]
-        ax.errorbar(s["beta"] + 3, s["response"], yerr=[s["response"] - s["lo"], s["hi"] - s["response"]],
-                    color=c, ls="none", marker="s", ms=5, capsize=2, label=f"TimesFM 3.0, {T // 168} weeks (β = 50 only)")
+        ax.errorbar(s["beta"], s["response"], yerr=[s["response"] - s["lo"], s["hi"] - s["response"]],
+                    color=c, ls="none", marker="s", mfc="none", ms=5, capsize=2,
+                    label=f"TimesFM 3.0, {T // 168} weeks (β = 50 only)")
     ax.plot([0, 100], [0, 100], color=INK, lw=1, ls="--", label="true slope")
     ax.set_xlabel("true slope in the synthetic data (MW per °C)", color=INK2, fontsize=8)
     ax.set_ylabel("model response (MW per °C colder)", color=INK2, fontsize=9)
@@ -235,6 +376,42 @@ def report(cfg):
     fig.tight_layout()
     save_fig(fig, "synthetic_probe", cfg)
 
+    fig, ax = plt.subplots(figsize=(9, 4))
+    for mi, (m, name) in enumerate(models + [("timesfm3", "TimesFM 3.0")]):
+        s = ch[(ch.model == m)].set_index("confounder").reindex(["none", "drift", "christmas", "lag", "station"])
+        x = np.arange(len(s)) + (mi - 1) * 0.20
+        ax.errorbar(x, s.change, yerr=[s.change - s.lo, s.hi - s.change],
+                    fmt="o", color=COLORS[mi], capsize=3, label=name)
+    ax.axhline(0, color=INK2, lw=1)
+    ax.set_xticks(np.arange(5), ["Clean", "Slow drift", "Christmas", "Delayed effect", "One station"])
+    ax.set_ylabel("Change in normalised response\n(16 minus 4 weeks)")
+    ax.legend(frameon=False)
+    style(ax, "Matched histories: five seeds; 95% seed/origin bootstrap intervals")
+    fig.tight_layout()
+    save_fig(fig, "synthetic_mechanism", cfg)
+    from huggingface_hub.constants import HF_HUB_CACHE
+    from pathlib import Path
+    repos = {"timestral-209m": "mistralai--Timestral-209M", "chronos2": "amazon--chronos-2",
+             "timesfm3": "google--timesfm-3.0-pytorch"}
+    revisions = {}
+    for m, repo in repos.items():
+        ref = Path(HF_HUB_CACHE) / ("models--" + repo) / "refs/main"
+        revisions[m] = ref.read_text().strip() if ref.exists() else "unavailable"
+    manifest = {"cache_version": CACHE_VERSION, "seeds": list(SEEDS), "rows": len(d),
+                "origins": [str(o) for o in ORIGINS], "zones": ZONES, "contexts": CONTEXTS,
+                "temperature_hashes": sorted(d.temperature_hash.unique()),
+                "bootstrap": "2000 crossed seed/origin draws, zones clustered; seed 0",
+                "model_revisions_in_local_cache": revisions,
+                "generated_at_utc": pd.Timestamp.now(tz="UTC").isoformat(),
+                "auditable_responses": archive.name,
+                "auditable_responses_sha256": hashlib.sha256(archive.read_bytes()).hexdigest(),
+                "reference_response_version": "holiday-aware-v1",
+                "cached_reference_rows_corrected": changed_references,
+                "packages": {p: importlib.metadata.version(p) for p in
+                             ["numpy", "pandas", "torch", "timestral", "chronos-forecasting", "timesfm"]}}
+    dest = ROOT / cfg["paths"]["results"] / "tables" / "synthetic_manifest.json"
+    dest.write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+
 
 def main():
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
@@ -244,19 +421,24 @@ def main():
     p.add_argument("--confounders", action="store_true", help="run test C instead of A + B")
     p.add_argument("--mechanism", action="store_true", help="run test D instead of A + B")
     p.add_argument("--clean", action="store_true", help="run only the clean beta = 50 cell")
+    p.add_argument("--all", action="store_true", help="all review cells (TimesFM: beta=50 only)")
+    p.add_argument("--seeds", nargs="+", type=int, default=list(SEEDS))
     p.add_argument("--report", action="store_true")
     args = p.parse_args()
     temp = pd.read_parquet(ROOT / cfg["paths"]["processed"] / "temperature.parquet")
     for m in args.models:
-        if args.clean:
-            run(m, temp, CLEAN_CELL, "_clean")
+        if args.all:
+            multi = pd.read_parquet(ROOT / cfg["paths"]["processed"] / "temperature_multi.parquet")
+            run(m, temp, expected_cells(m), temp_multi=multi, seeds=args.seeds)
+        elif args.clean:
+            run(m, temp, CLEAN_CELL, "_clean", seeds=args.seeds)
         elif args.mechanism:
             multi = pd.read_parquet(ROOT / cfg["paths"]["processed"] / "temperature_multi.parquet")
-            run(m, temp, MECH_CELLS, "_mechanism", multi)
+            run(m, temp, MECH_CELLS, "_mechanism", multi, seeds=args.seeds)
         elif args.confounders:
-            run(m, temp, CONF_CELLS, "_confounders")
+            run(m, temp, CONF_CELLS, "_confounders", seeds=args.seeds)
         else:
-            run(m, temp)
+            run(m, temp, seeds=args.seeds)
     if args.report:
         report(cfg)
 

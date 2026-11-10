@@ -1,0 +1,13 @@
+{
+  "resamples": 1000,
+  "seed": 0,
+  "block_days": [
+    1,
+    3,
+    7
+  ],
+  "method": "non-circular moving calendar-day blocks, stratified within winters; shared across models and zones",
+  "missing_caches": [],
+  "rows": 312,
+  "inference_rerun": false
+}

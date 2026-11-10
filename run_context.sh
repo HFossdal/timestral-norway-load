@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Context length chosen without the test winter: the 16-week (2688 h) runs on the calibration
-# winters, so the 4 vs 16 week comparison (and the bias fit for the 16-week model) can be made
-# on 2022-25 only. Calibration winter 2024-25 first, since it alone decides the choice.
+# Calibration-winter checks after the 16-week gain was first noticed on the test winter.
+# These runs confirm the pattern on 2022-25 and supply the 16-week bias fit; they do not
+# constitute an independent, fully held-out choice of context length.
 export HF_HUB_DISABLE_SYMLINKS_WARNING=1 PYTHONUNBUFFERED=1
 
 run() { echo "=== $(date +%H:%M:%S) $*"; python -m src.forecast --origin noon_before "$@" || echo "!!! FAILED: $*"; }

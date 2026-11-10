@@ -44,7 +44,7 @@ weather:
 
 # Forecasting
 horizon_hours: 24
-context_hours: 2688             # 16 weeks, chosen on the calibration winter 2024-25 (4 weeks = 672 was the original)
+context_hours: 2688             # 16 weeks: effect first noticed on test winter, then checked on calibration/other winters
 origin: noon_before             # main setting; "midnight" = 00:00 local on the target day (secondary)
 quantiles: [0.05, 0.10, 0.50, 0.90, 0.95]
 regime_threshold_end: "2025-11-01"   # cold-snap / peak thresholds use only history before this (= test start)

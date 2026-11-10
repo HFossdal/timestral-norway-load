@@ -8,8 +8,8 @@ Usage:
 Setup (see config.yaml):
 - One forecast per target day D in each evaluation winter. The target window is the
   24 UTC hours starting at local midnight of D. On the spring DST day (23 local hours)
-  this window therefore ends at 00:00 local on D+1; we keep 24 hours so every forecast
-  has the same shape (logged once per run).
+  this window includes the 00:00 hour of D+1, also predicted by the next origin.
+  We keep 24 hours so every forecast has the same shape; pairing must include origin.
 - origin "midnight": the forecast is made at local midnight of D (lead 0-23 h).
   origin "noon_before": made at 12:00 local on D-1; the model forecasts 36 h and we keep
   the last 24 (lead 12-35 h).
@@ -82,8 +82,10 @@ def noise_offset(origin, zone_index: int, sd: float) -> float:
 def forecast_temps(origins, zones, H) -> dict:
     """Archived MET Nordic temperature forecasts over the horizon of each origin (see
     data_weather_forecast.py): zone -> (n_origins, H) array, NaN where not downloaded.
-    Run used = the 06 UTC run of the origin's UTC day, at least 5 h before the origin
-    (published in time: the noon-before origin is 10-11 UTC, the midnight origin 22-23 UTC)."""
+    The lookup key is the origin day's nominal 06 UTC slot, 4-5 h before the noon-before
+    origin (10-11 UTC). The downloader records source_run when it falls back to the older
+    00 UTC run. Midnight origins are at 22-23 UTC. Archive initialisation times alone do
+    not reconstruct the exact publication time of each forecast."""
     path = ROOT / "data" / "processed" / "temp_forecast.parquet"
     if not path.exists():
         return {z: np.full((len(origins), H), np.nan) for z in zones}

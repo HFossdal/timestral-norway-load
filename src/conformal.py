@@ -70,10 +70,16 @@ def correction(s: pd.Series, level: int) -> float:
     return float(np.sort(np.asarray(s, dtype=float))[k - 1])
 
 
+def require_known_groups(frame: pd.DataFrame, keys) -> None:
+    if "group" in keys and "group_available" in frame and not frame["group_available"].fillna(False).all():
+        raise ValueError("Mondrian grouping requires temperature information available at the forecast origin")
+
+
 def fit(cal: pd.DataFrame, variant: str, level: int, min_n: int = 240) -> pd.DataFrame:
     """Table of corrections: one row per key, with columns Q and n (calibration hours)."""
-    s = scores(cal, level)
     keys = {"pooled": [], "zone": ["zone"], "mondrian": ["group"], "mondrian_zone": ["group", "zone"]}[variant]
+    require_known_groups(cal, keys)
+    s = scores(cal, level)
     if not keys:
         return pd.DataFrame({"Q": [correction(s, level)], "n": [len(s)]})
     table = s.groupby([cal[k] for k in keys]).agg(Q=lambda x: correction(x, level), n="size").reset_index()
@@ -100,6 +106,7 @@ def apply(test: pd.DataFrame, table: pd.DataFrame, level: int) -> pd.DataFrame:
     """
     lo, hi = INTERVALS[level]
     keys = [c for c in table.columns if c not in ("Q", "n", "fallback")]
+    require_known_groups(test, keys)
     if keys:
         Q = test[keys].merge(table, on=keys, how="left")["Q"].values
     else:

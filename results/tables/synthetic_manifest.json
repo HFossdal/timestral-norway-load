@@ -1,0 +1,60 @@
+{
+  "cache_version": "matched-v2",
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "rows": 11250,
+  "origins": [
+    "2025-12-01 00:00:00+00:00",
+    "2025-12-08 00:00:00+00:00",
+    "2025-12-15 00:00:00+00:00",
+    "2025-12-22 00:00:00+00:00",
+    "2025-12-29 00:00:00+00:00",
+    "2026-01-05 00:00:00+00:00",
+    "2026-01-12 00:00:00+00:00",
+    "2026-01-19 00:00:00+00:00",
+    "2026-01-26 00:00:00+00:00",
+    "2026-02-02 00:00:00+00:00",
+    "2026-02-09 00:00:00+00:00",
+    "2026-02-16 00:00:00+00:00",
+    "2026-02-23 00:00:00+00:00",
+    "2026-03-02 00:00:00+00:00",
+    "2026-03-09 00:00:00+00:00"
+  ],
+  "zones": [
+    "NO1",
+    "NO3",
+    "NO4"
+  ],
+  "contexts": [
+    672,
+    2688
+  ],
+  "temperature_hashes": [
+    "3283a4ac3c42a1eb99fccff7b950bf3a6ed49ef1217cbd115dd738b27a933f6f",
+    "85e9ae689934076d42e93f946e8ba30dccdfeb7872f78b74ec4c1277956f90bc"
+  ],
+  "bootstrap": "2000 crossed seed/origin draws, zones clustered; seed 0",
+  "model_revisions_in_local_cache": {
+    "timestral-209m": "9874d252ab0aae16f7f7c999f98f98d6ad7d8365",
+    "chronos2": "29ec3766d36d6f73f0696f85560a422f50e8498c",
+    "timesfm3": "43046b85ec22d584a13f8098c2ed39c889e129c2"
+  },
+  "generated_at_utc": "2026-11-10T05:27:41.846302+00:00",
+  "auditable_responses": "synthetic_responses_matched_v2.csv.gz",
+  "auditable_responses_sha256": "1fa40ec1b5d5f9326aa5c452e12c49afe5236ef2bae142ed904c152f2c3d3cf2",
+  "reference_response_version": "holiday-aware-v1",
+  "cached_reference_rows_corrected": 90,
+  "packages": {
+    "numpy": "2.4.4",
+    "pandas": "3.0.2",
+    "torch": "2.10.0",
+    "timestral": "1.0.0",
+    "chronos-forecasting": "2.3.2",
+    "timesfm": "3.0.2"
+  }
+}

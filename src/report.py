@@ -29,9 +29,10 @@ import matplotlib.pyplot as plt  # noqa: E402
 
 from src import ROOT, load_config
 from src import conformal
+from src.bootstrap import day_draws, bootstrap_margin_totals
 from src.forecast import COLD_SHIFT, noise_offset
 from src.metrics import add_row_metrics, mase_scales, pinball, summarize
-from src.regimes import LOCAL_TZ, is_holiday, label, thresholds
+from src.regimes import LOCAL_TZ, is_holiday, label, thresholds, set_forecast_groups
 
 REGIMES = ["all", "cold", "peak", "holiday", "normal"]
 TEST, CAL, CAL3 = "w2025", ["w2024"], ["w2022", "w2023", "w2024"]
@@ -40,6 +41,13 @@ TEST, CAL, CAL3 = "w2025", ["w2024"], ["w2022", "w2023", "w2024"]
 # enters through robust_w2021() and the per-winter context table.
 MAIN_WINTERS = CAL3 + [TEST]
 ALL_WINTERS = ["w2021"] + MAIN_WINTERS
+FIX_RUNS = [("", "timestral-209m_temp", "timestral-209m_temp", "day_temp"),
+            ("_caloracle", "timestral-209m_temp_noisy", "timestral-209m_temp", "day_temp_noisy"),
+            ("", "timestral-209m_temp_noisy", "timestral-209m_temp_noisy", "day_temp_noisy"),
+            ("", "chronos2_temp", "chronos2_temp", "day_temp"),
+            ("", "chronos2_temp_noisy", "chronos2_temp_noisy", "day_temp_noisy"),
+            ("", "timestral-209m_temp_fc", "timestral-209m_temp_fc", "day_temp_fc"),
+            ("", "chronos2_temp_fc", "chronos2_temp_fc", "day_temp_fc")]
 SIZES = {"timestral-5m": 5, "timestral-28m": 28, "timestral-123m": 123, "timestral-209m": 209}  # million params
 
 # Figure style: categorical slots 1-4 of the dataviz reference palette (checked for
@@ -88,21 +96,25 @@ def prepare(fc: pd.DataFrame, load, temp, cfg) -> pd.DataFrame:
     return add_row_metrics(label(fc, temp, thr), mase_scales(load, cfg["regime_threshold_end"]))
 
 
-def bootstrap_ci(m: pd.DataFrame, by: list[str], cols: list[str], n_boot: int, seed=0) -> pd.DataFrame:
+def bootstrap_ci(m: pd.DataFrame, by: list[str], cols: list[str], n_boot: int, seed=0,
+                 block_days=1, calendar=None) -> pd.DataFrame:
     """Day-level block bootstrap of the mean of each column within each group.
 
     Whole target days are resampled (hours within a day are correlated); the same set of
     resampled days is used for every group so CIs are comparable across models.
     """
-    rng = np.random.default_rng(seed)
-    days = np.array(sorted(m["target_day"].unique()))
-    draws = rng.integers(0, len(days), size=(n_boot, len(days)))
+    days, draws = day_draws(m if calendar is None else calendar, n_boot, block_days, seed)
+    if "winter" not in m:
+        m = m.assign(winter="single")
     rows = []
     for key, g in m.groupby(by):
         # per-day sums and counts -> resampled means are ratios of summed sums to summed counts
-        daily = g.groupby("target_day")[cols].agg(["sum", "count"]).reindex(days, fill_value=0)
+        daily = g.groupby(["winter", "target_day"])[cols].agg(["sum", "count"]).reindex(days, fill_value=0)
         rec = dict(zip(by, key if isinstance(key, tuple) else (key,)))
         for c in cols:
+            if not daily[(c, "count")].sum():
+                rec[f"{c}_lo"] = rec[f"{c}_hi"] = np.nan
+                continue
             s, n = daily[(c, "sum")].values[draws].sum(1), daily[(c, "count")].values[draws].sum(1)
             with np.errstate(invalid="ignore"):
                 est = s / n
@@ -133,18 +145,24 @@ def main_table(m: pd.DataFrame, cfg) -> pd.DataFrame:
     return pd.concat([overall, per_zone]).sort_index()
 
 
-def paired_diff(m: pd.DataFrame, a: str, b: str, n_boot: int, winters=(TEST,)) -> pd.DataFrame:
-    """Run b minus run a on the test winter (or the given winters), matched on (zone, hour), per regime.
+def paired_diff(m: pd.DataFrame, a: str, b: str, n_boot: int, winters=(TEST,), block_days=1) -> pd.DataFrame:
+    """Run b minus a, matched on winter, zone, forecast origin and target hour, per regime.
 
     Negative MAE / pinball differences mean b is better. CIs come from the day-level
     bootstrap, so they account for the pairing (both runs see the same resampled days).
     """
     test = m[m["winter"].isin(winters)]
-    keys = ["zone", "time_utc"]
+    # Fixed 24-hour target windows overlap at spring DST: target hour alone is
+    # not unique. Match the forecast origin as well, rather than cross-joining.
+    keys = ["winter", "zone", "origin_utc", "time_utc"]
     flags = ["target_day", "cold", "peak", "holiday", "normal"]
     A = test[test["run"] == a].set_index(keys)
     B = test[test["run"] == b].set_index(keys)
-    d = A[flags].join(B[["ae", "pinball", "in80"]] - A[["ae", "pinball", "in80"]].astype(float), how="inner")
+    if not A.index.is_unique or not B.index.is_unique:
+        raise ValueError("duplicate forecast keys in paired comparison")
+    matched = A.index.intersection(B.index)
+    A, B = A.loc[matched], B.loc[matched]
+    d = A[flags].join(B[["ae", "pinball", "in80"]].astype(float) - A[["ae", "pinball", "in80"]].astype(float))
     d = d.reset_index().assign(comparison=f"{b} vs {a}")
     rows = []
     for r in REGIMES:
@@ -153,7 +171,8 @@ def paired_diff(m: pd.DataFrame, a: str, b: str, n_boot: int, winters=(TEST,)) -
             continue
         t = sub.groupby("comparison")[["ae", "pinball", "in80"]].mean().rename(
             columns={"ae": "dMAE", "pinball": "dPinball", "in80": "dCov80"})
-        t = t.join(bootstrap_ci(sub, ["comparison"], ["ae", "pinball"], n_boot).rename(
+        t = t.join(bootstrap_ci(sub, ["comparison"], ["ae", "pinball"], n_boot,
+                               block_days=block_days, calendar=d).rename(
             columns=lambda c: "d" + c.replace("ae", "MAE").replace("pinball", "Pinball")))
         t["n_days"] = sub["target_day"].nunique()
         # Relative MAE change, against run a's MAE on the same rows
@@ -171,7 +190,8 @@ def add_fc_day_temp(df: pd.DataFrame, cfg) -> pd.DataFrame:
     fc = forecast_temps(o, cfg["zones"], H)
     keys = pd.concat([pd.DataFrame({"origin_utc": o, "zone": z, "day_temp_fc": np.nanmean(fc[z][:, -24:], axis=1)
                                     if not np.isnan(fc[z]).all() else np.nan}) for z in cfg["zones"]])
-    return df.merge(keys, on=["origin_utc", "zone"], how="left")
+    out = df.merge(keys, on=["origin_utc", "zone"], how="left")
+    return set_forecast_groups(out, out["run"].str.endswith("_temp_fc"), "day_temp_fc")
 
 
 def fc_missing_days(m: pd.DataFrame) -> set:
@@ -182,7 +202,9 @@ def fc_missing_days(m: pd.DataFrame) -> set:
     o = pd.DatetimeIndex(sorted(m["origin_utc"].unique()))
     if not len(o):
         return set()
-    miss = np.isnan(forecast_temps(o, ["NO1"], 36)["NO1"]).any(axis=1)
+    zones = sorted(m["zone"].unique())
+    forecasts = forecast_temps(o, zones, 36)
+    miss = np.logical_or.reduce([np.isnan(forecasts[z]).any(axis=1) for z in zones])
     days = m.loc[m["origin_utc"].isin(o[miss]), "target_day"]
     return set(days.unique())
 
@@ -303,7 +325,8 @@ def add_noisy_day_temp(df: pd.DataFrame, cfg) -> pd.DataFrame:
     keys = df[["origin_utc", "zone"]].drop_duplicates()
     keys["offset"] = [noise_offset(o, zi[z], cfg["temp_noise_sd"]) for o, z in zip(keys["origin_utc"], keys["zone"])]
     out = df.merge(keys, on=["origin_utc", "zone"], how="left")
-    return out.assign(day_temp_noisy=out["day_temp"] + out["offset"])
+    out = out.assign(day_temp_noisy=out["day_temp"] + out["offset"])
+    return set_forecast_groups(out, out["run"].str.endswith("_temp_noisy"), "day_temp_noisy")
 
 
 def fix_variants(cal: pd.DataFrame, test: pd.DataFrame, cfg, temp_col="day_temp",
@@ -312,7 +335,8 @@ def fix_variants(cal: pd.DataFrame, test: pd.DataFrame, cfg, temp_col="day_temp"
 
     The bias is fitted against cal_temp_col on the calibration rows and applied with temp_col
     on the test rows (day_temp_noisy for the realistic version: the temperature forecast the
-    model was given). The Mondrian group is the one from the original forecast (still ex-ante).
+    model was given). Mondrian groups must already use the weather available to
+    that run (oracle, forecast or noisy); they stay fixed during the bias shift.
     Returns ({name: corrected test}, (a, b)).
     """
     a, b = conformal.fit_bias(cal, cal_temp_col)
@@ -558,8 +582,8 @@ def load_ctx(cfg, origin, winters, ctx, runs, load, temp) -> pd.DataFrame:
 def context_table(cfg, origin, load, temp) -> pd.DataFrame:
     """Context-length sensitivity: each longer-context run vs the 4-week (672 h) run of the same
     model, as paired differences (negative = longer context better), per winter.
-    The calibration winter 2024-25 is the one that decided the context length; the other
-    winters show whether the gain is stable. The longer-context runs are renamed
+    The effect was first noticed on the test winter, then checked on the calibration
+    and other winters; this was not a fully held-out context selection. Runs are renamed
     '<run>@ctx<T>' so paired_diff can match them."""
     parts = []
     for winter in sorted(cfg["evaluation_winters"]):
@@ -676,7 +700,7 @@ def probe_table(cfg, origin, load, temp) -> pd.DataFrame:
             cold = load_ctx(cfg, origin, [TEST], ctx, [f"{model}_temp_cold"], load, temp)
             if base.empty or cold.empty:
                 continue
-            keys = ["zone", "time_utc"]
+            keys = ["winter", "zone", "origin_utc", "time_utc"]
             d = base.set_index(keys)[["cold", "q0.50"]].join(
                 cold.set_index(keys)[["q0.50"]].rename(columns={"q0.50": "q_cold"}), how="inner")
             d["response"] = (d["q_cold"] - d["q0.50"]) / -COLD_SHIFT
@@ -689,14 +713,14 @@ def probe_table(cfg, origin, load, temp) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def probe_summary(cfg, origin, load, temp, winters=(TEST,)) -> pd.DataFrame:
+def probe_summary(cfg, origin, load, temp, winters=(TEST,), block_days=1, model_contrasts=False) -> pd.DataFrame:
     """The probe with uncertainty: per model and context length, the mean ratio over the five
     zones (every zone has the same hours, so the mean over hours weights the zones equally),
     and each model's change from 4 to 16 weeks paired on the same hours. 95% CIs from the
     day-level bootstrap (same resampled days at both lengths)."""
     hist = historical_slopes(load, temp, cfg["regime_threshold_end"])
-    keys = ["zone", "time_utc"]
-    rows = []
+    keys = ["winter", "zone", "origin_utc", "time_utc"]
+    rows, changes = [], {}
     for model in ["timestral-209m", "timestral-123m", "chronos2", "timesfm3", "moirai2"]:
         per_ctx = {}
         for ctx in [672, 1344, 2688, 5376]:
@@ -709,15 +733,27 @@ def probe_summary(cfg, origin, load, temp, winters=(TEST,)) -> pd.DataFrame:
             slope = d.index.get_level_values("zone").map(hist).values
             d["r"] = (d["q_cold"] - d["q0.50"]) / -COLD_SHIFT / slope
             per_ctx[ctx] = d
-            ci = bootstrap_ci(d.reset_index().assign(g=1), ["g"], ["r"], cfg["bootstrap_n"]).iloc[0]
+            ci = bootstrap_ci(d.reset_index().assign(g=1), ["g"], ["r"], cfg["bootstrap_n"], block_days=block_days).iloc[0]
             rows.append({"model": model, "context_h": ctx, "stat": "mean ratio", "value": d["r"].mean(),
                          "lo": ci["r_lo"], "hi": ci["r_hi"]})
         if 672 in per_ctx and 2688 in per_ctx:
             j = per_ctx[2688][["r", "target_day"]].join(per_ctx[672][["r"]], rsuffix="_4w", how="inner")
             j["diff"] = j["r"] - j["r_4w"]
-            ci = bootstrap_ci(j.reset_index().assign(g=1), ["g"], ["diff"], cfg["bootstrap_n"]).iloc[0]
+            ci = bootstrap_ci(j.reset_index().assign(g=1), ["g"], ["diff"], cfg["bootstrap_n"], block_days=block_days).iloc[0]
+            changes[model] = j[["target_day", "diff"]]
             rows.append({"model": model, "context_h": 2688, "stat": "change from 4 weeks", "value": j["diff"].mean(),
                          "lo": ci["diff_lo"], "hi": ci["diff_hi"]})
+    if model_contrasts and "timestral-209m" in changes:
+        for other in ["chronos2", "timesfm3"]:
+            if other not in changes:
+                continue
+            j = changes["timestral-209m"].join(changes[other][["diff"]], rsuffix="_other", how="inner")
+            j["interaction"] = j["diff"] - j["diff_other"]
+            ci = bootstrap_ci(j.reset_index().assign(g=1), ["g"], ["interaction"], cfg["bootstrap_n"],
+                              block_days=block_days).iloc[0]
+            rows.append({"model": f"timestral-209m minus {other}", "context_h": 2688,
+                         "stat": "difference in context change", "value": j.interaction.mean(),
+                         "lo": ci.interaction_lo, "hi": ci.interaction_hi})
     return pd.DataFrame(rows)
 
 
@@ -789,8 +825,8 @@ def novelty_table(cfg, origin, load, temp, run="timestral-209m_temp", winters=No
     with day-level bootstrap CIs."""
     a = load_ctx(cfg, origin, winters, 672, [run], load, temp)
     b = load_ctx(cfg, origin, winters, 2688, [run], load, temp)
-    keys = ["zone", "time_utc"]
-    d = a.set_index(keys)[["winter", "origin_utc", "target_day", "day_temp", "cold", "y_true", "q0.50"]].join(
+    keys = ["winter", "zone", "origin_utc", "time_utc"]
+    d = a.set_index(keys)[["target_day", "day_temp", "cold", "y_true", "q0.50"]].join(
         b.set_index(keys)[["q0.50"]].rename(columns={"q0.50": "q16"}), how="inner").reset_index()
     d = d.assign(e4=d["y_true"] - d["q0.50"], e16=d["y_true"] - d["q16"])
 
@@ -821,7 +857,7 @@ def novelty_table(cfg, origin, load, temp, run="timestral-209m_temp", winters=No
 
 
 def cold_cqr_table(cfg, origin, load, temp, winters=None, evals=("test", "lowo"),
-                   runs=CONTEXT_RUNS) -> tuple[pd.DataFrame, pd.DataFrame]:
+                   runs=CONTEXT_RUNS, block_days=1) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Fix for the one-sided cold misses: CQR per temperature bin, two-sided vs one-sided
     (each end of the band calibrated on its own, see conformal.fit_asym).
 
@@ -860,13 +896,13 @@ def cold_cqr_table(cfg, origin, load, temp, winters=None, evals=("test", "lowo")
                                  below=(d["y_true"] < d["q0.10"]).astype(float))
                     for reg in ["all", "cold", "below_m10"]:
                         sub = d if reg == "all" else d[d[reg]]
-                        ci = bootstrap_ci(sub, ["g"], ["above", "below"], cfg["bootstrap_n"]).iloc[0]
+                        ci = bootstrap_ci(sub, ["g"], ["above", "below"], cfg["bootstrap_n"], block_days=block_days).iloc[0]
                         rows.append({"model": run, "context_h": ctx, "eval": ev, "variant": name, "regime": reg,
                                      **interval_stats(sub), **ci})
     return pd.DataFrame(rows), pd.concat(qtabs) if qtabs else pd.DataFrame()
 
 
-def cold_cqr_fc_table(m: pd.DataFrame, cfg) -> tuple[pd.DataFrame, pd.DataFrame]:
+def cold_cqr_fc_table(m: pd.DataFrame, cfg, block_days=1) -> tuple[pd.DataFrame, pd.DataFrame]:
     """The one-sided temperature-bin CQR on the real-forecast runs, binned by the *forecast*
     day temperature (what the operator knows at noon the day before). The reported regimes
     (cold, below -10) still use observed temperature. Three calibrations:
@@ -901,7 +937,7 @@ def cold_cqr_fc_table(m: pd.DataFrame, cfg) -> tuple[pd.DataFrame, pd.DataFrame]
                              below=(d["y_true"] < d["q0.10"]).astype(float))
                 for reg in ["all", "cold", "below_m10"]:
                     sub = d if reg == "all" else d[d[reg]]
-                    ci = bootstrap_ci(sub, ["g"], ["above", "below"], cfg["bootstrap_n"]).iloc[0]
+                    ci = bootstrap_ci(sub, ["g"], ["above", "below"], cfg["bootstrap_n"], block_days=block_days).iloc[0]
                     rows.append({"model": run, "calibration": cal_name, "variant": name, "regime": reg,
                                  "zone_days": len(sub) / 24, **interval_stats(sub), **ci})
     return pd.DataFrame(rows), pd.concat(qtabs) if qtabs else pd.DataFrame()
@@ -946,12 +982,12 @@ RESERVE_RUNS = ["snaive", "lgbm_temp", "chronos2_temp", "timestral-209m_temp", "
 
 
 def reserve_table(cfg, origin, load, temp, ctx_main=2688, cover=0.90) -> pd.DataFrame:
-    """The operator's number: how many MW above the forecast daily peak must be held so the
-    actual peak is covered on `cover` (90%) of days?
+    """Retrospective test-period estimate of the margin covering `cover` of daily peaks.
 
     Per zone: required margin = the 90th percentile over test days of
         actual daily peak - forecast daily peak (max of the median over the 24 h).
-    A better forecast needs a smaller margin for the same security. Summed over the five zones
+    This uses test-period errors to estimate the margin and does not validate a reserve
+    policy on unseen days. Summed over the five zones
     (each zone holds its own margin). Computed on all test days and on each zone's cold-snap
     days (25-34 days per zone, so the cold numbers are rough). Total gets a day-level
     bootstrap CI. Timestral at 4 weeks is added as 'timestral-209m_temp@4w'."""
@@ -975,14 +1011,7 @@ def reserve_table(cfg, origin, load, temp, ctx_main=2688, cover=0.90) -> pd.Data
         for run, r in s.groupby("run"):
             per_zone = r.groupby("zone")["err"].quantile(cover)
             # bootstrap the total: resample days, recompute each zone's quantile, sum
-            boot = []
-            for k in range(cfg["bootstrap_n"]):
-                pick = pd.Index(days[draws[k]])
-                tot = 0.0
-                for z, rz in r.groupby("zone"):
-                    e = rz.set_index("target_day")["err"].reindex(pick).dropna()
-                    tot += np.quantile(e, cover) if len(e) else np.nan
-                boot.append(tot)
+            boot = bootstrap_margin_totals(r, days, draws, cover)
             rows.append({"regime": reg, "run": run, **{z: v for z, v in per_zone.items()},
                          "total": per_zone.sum(), "total_lo": np.nanpercentile(boot, 2.5),
                          "total_hi": np.nanpercentile(boot, 97.5), "zone_days": len(r)})
@@ -1088,6 +1117,8 @@ def statnett_run(cfg, origin, load, temp, winters, ctx=2688) -> tuple[pd.DataFra
       statnett_insample  the evaluated winter itself (uses that winter's actuals, favours Statnett)
     Point forecast only: every quantile column holds the forecast, so only MAE-type metrics
     mean anything. The raw forecast and ENTSO-E actual stay in columns statnett_raw / entsoe_actual.
+    origin_utc labels our evaluation window, not Statnett's issue time; the retrieved
+    series does not reconstruct publication/revision vintages at that origin.
     Returns (prepared rows of both runs, the scale factors). Empty if the data isn't downloaded."""
     P = ROOT / cfg["paths"]["processed"]
     if not (P / "entsoe_actual.parquet").exists():
@@ -1152,9 +1183,9 @@ def statnett_table(cfg, origin, load, temp, ctx=2688) -> tuple[pd.DataFrame, pd.
     if st.empty:
         return pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
     ours = load_ctx(cfg, origin, MAIN_WINTERS, ctx, FM_FC_RUNS + ["timestral-209m_temp"], load, temp)
-    keys = ["zone", "time_utc"]
+    keys = ["winter", "zone", "origin_utc", "time_utc"]
     hours = st.loc[st["run"] == "statnett", keys]
-    m = pd.concat([ours.merge(hours, on=keys), st], ignore_index=True)  # every run on Statnett's hours
+    m = pd.concat([ours.merge(hours, on=keys, validate="many_to_one"), st], ignore_index=True)
     own = st[st["run"] == "statnett"].assign(run="statnett_own_target")
     own["ae"] = (own["entsoe_actual"] - own["statnett_raw"]).abs()
     own["ape"] = 100 * own["ae"] / own["entsoe_actual"]
@@ -1381,7 +1412,8 @@ def main():
     res = reserve_table(cfg, origin, load, temp, ctx_main=cfg["context_hours"])
     if not res.empty:
         save(res, "reserve" + sfx, cfg)
-        print("\nRequired peak margin (MW above the forecast peak, covers 90% of days)\n", res.round(0).to_string())
+        print("\nRetrospective peak-error margins (sum of zone-wise test-period 90th percentiles, MW)\n",
+              res.round(0).to_string())
 
     ens_d, ens_s = ensemble_table(cfg, origin, load, temp, ctx=cfg["context_hours"])
     save(ens_d, "ensemble_diff" + sfx, cfg)
@@ -1440,16 +1472,7 @@ def main():
     # The fix: bias correction + CQR (oracle temperature, and the realistic noisy-temperature run)
     # Name suffix, run, calibration run, temperature column. "_caloracle": the noisy run corrected
     # with a fit on the oracle run (all we had before the noisy calibration winters were run).
-    fix_runs = [("", "timestral-209m_temp", "timestral-209m_temp", "day_temp"),
-                ("_caloracle", "timestral-209m_temp_noisy", "timestral-209m_temp", "day_temp_noisy"),
-                ("", "timestral-209m_temp_noisy", "timestral-209m_temp_noisy", "day_temp_noisy"),
-                ("", "chronos2_temp", "chronos2_temp", "day_temp"),
-                ("", "chronos2_temp_noisy", "chronos2_temp_noisy", "day_temp_noisy"),
-                # The real archived weather forecasts: fitted on the calibration winter's
-                # real-forecast run, against the forecast day temperature (what an operator has)
-                ("", "timestral-209m_temp_fc", "timestral-209m_temp_fc", "day_temp_fc"),
-                ("", "chronos2_temp_fc", "chronos2_temp_fc", "day_temp_fc")]
-    for name_sfx, run, cal_run, tcol in fix_runs:
+    for name_sfx, run, cal_run, tcol in FIX_RUNS:
         if run in runs and cal_run in runs:
             tab, params = fix_table(m[m["run"].isin({run, cal_run})], run, cal_run, cfg, tcol)
             if params.empty:

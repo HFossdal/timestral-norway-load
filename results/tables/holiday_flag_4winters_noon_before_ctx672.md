@@ -1,7 +1,7 @@
 |                                                                   |   dMAE |   dPinball |   dCov80 |   dMAE_lo |   dMAE_hi |   dPinball_lo |   dPinball_hi |   n_days |   dMAE_pct |
 |:------------------------------------------------------------------|-------:|-----------:|---------:|----------:|----------:|--------------:|--------------:|---------:|-----------:|
-| ('timestral-209m_temp_holiday vs timestral-209m_temp', 'all')     | -0.933 |     -0.293 |    0.003 |    -1.223 |    -0.634 |        -0.413 |        -0.186 |      605 |     -1.17  |
-| ('timestral-209m_temp_holiday vs timestral-209m_temp', 'cold')    | -2.663 |     -0.852 |    0.01  |    -3.995 |    -1.404 |        -1.409 |        -0.386 |      164 |     -2.827 |
-| ('timestral-209m_temp_holiday vs timestral-209m_temp', 'peak')    | -2.208 |     -0.716 |    0.005 |    -3.277 |    -1.271 |        -1.239 |        -0.306 |      347 |     -2.34  |
-| ('timestral-209m_temp_holiday vs timestral-209m_temp', 'holiday') |  0.292 |     -0.806 |    0.021 |    -1.621 |     2.415 |        -1.827 |         0.166 |       39 |      0.266 |
-| ('timestral-209m_temp_holiday vs timestral-209m_temp', 'normal')  | -0.715 |     -0.15  |    0     |    -0.942 |    -0.503 |        -0.197 |        -0.103 |      542 |     -0.965 |
+| ('timestral-209m_temp_holiday vs timestral-209m_temp', 'all')     | -0.934 |     -0.293 |    0.003 |    -1.231 |    -0.627 |        -0.409 |        -0.191 |      605 |     -1.171 |
+| ('timestral-209m_temp_holiday vs timestral-209m_temp', 'cold')    | -2.663 |     -0.853 |    0.01  |    -4.004 |    -1.492 |        -1.427 |        -0.431 |      164 |     -2.826 |
+| ('timestral-209m_temp_holiday vs timestral-209m_temp', 'peak')    | -2.208 |     -0.716 |    0.005 |    -3.262 |    -1.298 |        -1.245 |        -0.298 |      347 |     -2.34  |
+| ('timestral-209m_temp_holiday vs timestral-209m_temp', 'holiday') |  0.292 |     -0.806 |    0.021 |    -1.807 |     2.468 |        -1.845 |         0.158 |       39 |      0.266 |
+| ('timestral-209m_temp_holiday vs timestral-209m_temp', 'normal')  | -0.716 |     -0.15  |    0     |    -0.947 |    -0.479 |        -0.196 |        -0.101 |      542 |     -0.966 |

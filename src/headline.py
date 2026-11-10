@@ -7,7 +7,7 @@ a calibrated 80% band misses 10% on each side.
 
 Second figure (real_forecast_bands): the same misses with the archived MET Nordic weather
 forecast instead of observed temperature, before and after the one-sided temperature-bin
-recalibration fitted on the 2024-25 real-forecast runs.
+recalibration fitted on the 2022-25 real-forecast runs, plus leave-one-winter-out checks.
 
 Usage: python -m src.headline
 """

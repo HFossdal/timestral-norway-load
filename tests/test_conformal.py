@@ -109,3 +109,13 @@ def test_bias_correction_recovers_known_parameters():
     cal = pd.DataFrame({"y_true": y, "q0.50": q50, "day_temp": t})
     a_hat, b_hat = conformal.fit_bias(cal)
     assert a_hat == pytest.approx(a, abs=1e-9) and b_hat == pytest.approx(b, abs=1e-9)
+
+
+def test_mondrian_requires_available_groups_but_pooled_does_not():
+    d = pd.DataFrame({"group": ["unavailable"], "group_available": [False],
+                      "y_true": [1.], "q0.10": [0.], "q0.50": [1.], "q0.90": [2.]})
+    with pytest.raises(ValueError, match="available at the forecast origin"):
+        conformal.fit(d, "mondrian", 80)
+    with pytest.raises(ValueError, match="available at the forecast origin"):
+        conformal.apply(d, pd.DataFrame({"group": ["other"], "Q": [0.], "n": [1]}), 80)
+    assert len(conformal.fit(d, "pooled", 80)) == 1

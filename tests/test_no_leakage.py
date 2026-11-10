@@ -5,6 +5,7 @@ Run: python -m pytest tests -q
 """
 import numpy as np
 import pandas as pd
+import pytest
 
 from src import forecast, regimes
 
@@ -54,3 +55,38 @@ def test_thresholds_ignore_data_after_the_cutoff():
     temp2.loc[later] = -50.0
     load2.loc[later] = 1e9
     pd.testing.assert_frame_equal(regimes.thresholds(load2, temp2, cut), before)
+
+
+@pytest.mark.parametrize("suffix,temp_col", [("_temp_fc", "day_temp_fc"), ("_temp_noisy", "day_temp_noisy")])
+def test_realistic_correction_groups_do_not_see_future_outcomes(suffix, temp_col):
+    times = pd.date_range("2025-01-01", "2025-01-04", freq="h", tz="UTC")
+    local_days = times.tz_convert("Europe/Oslo").day
+    observed = pd.DataFrame({"NO1": np.where(local_days == 2, -12., 3.)}, index=times)
+    target = pd.to_datetime(["2025-01-02", "2025-01-03"], utc=True)
+    fc = pd.DataFrame({"run": "timestral-209m" + suffix, "zone": "NO1", "time_utc": target,
+                       "origin_utc": target - pd.Timedelta(hours=12), "y_true": 100., "q0.50": 100.})
+    thr = pd.DataFrame({"cold_temp": [-5.], "peak_load": [150.]}, index=["NO1"])
+    a = regimes.label(fc, observed, thr)
+    assert not a.group_available.any()
+    a[temp_col] = [-1., -8.]
+    a = regimes.set_forecast_groups(a, a.run.str.endswith(suffix), temp_col)
+    b = regimes.label(fc.assign(y_true=10000.), -observed, thr)
+    b[temp_col] = [-1., -8.]
+    b = regimes.set_forecast_groups(b, b.run.str.endswith(suffix), temp_col)
+    assert list(a["group"]) == list(b["group"]) == ["other", "cold"]
+    assert list(a.cold) != list(b.cold)
+    assert not a.peak.any() and b.peak.all()
+
+
+def test_missing_weather_in_any_zone_excludes_the_forecast_day(monkeypatch):
+    from src import report
+    origins = pd.date_range("2025-01-01", periods=2, tz="UTC")
+    def forecasts(o, zones, H):
+        values = {z: np.zeros((len(o), H)) for z in zones}
+        if "NO2" in values:
+            values["NO2"][1, 0] = np.nan
+        return values
+    monkeypatch.setattr(forecast, "forecast_temps", forecasts)
+    frame = pd.DataFrame({"zone": ["NO1", "NO2", "NO1", "NO2"],
+                          "origin_utc": origins.repeat(2), "target_day": list(origins.date.repeat(2))})
+    assert report.fc_missing_days(frame) == {origins[1].date()}

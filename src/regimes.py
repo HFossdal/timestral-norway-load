@@ -66,6 +66,7 @@ def label(fc: pd.DataFrame, temp: pd.DataFrame, thr: pd.DataFrame) -> pd.DataFra
 
     dmt = daily_mean_temp(temp).stack().rename("day_temp")  # (date, zone) -> °C
     fc["day_temp"] = dmt.reindex(pd.MultiIndex.from_arrays([fc["target_day"], fc["zone"]])).values
+    fc["cold_temp_threshold"] = fc["zone"].map(thr["cold_temp"])
     fc["cold"] = fc["day_temp"] < fc["zone"].map(thr["cold_temp"])
     fc["peak"] = fc["y_true"] > fc["zone"].map(thr["peak_load"])
     fc["peak_exante"] = fc["q0.50"] > fc["zone"].map(thr["peak_load"])
@@ -75,4 +76,23 @@ def label(fc: pd.DataFrame, temp: pd.DataFrame, thr: pd.DataFrame) -> pd.DataFra
     fc["normal"] = ~(fc["cold"] | fc["peak"] | fc["holiday"])
     # Mondrian group (known at forecast time, exclusive): cold day > forecast peak > other
     fc["group"] = np.select([fc["cold"], fc["peak_exante"]], ["cold", "peak_exante"], default="other")
+    # Realised weather defines reporting flags. Realistic calibration must use
+    # the weather information supplied to the run, populated by report.py.
+    needs_forecast = fc["run"].str.endswith(("_temp_fc", "_temp_noisy"))
+    fc["group_available"] = ~needs_forecast
+    fc.loc[needs_forecast, "group"] = "unavailable"
     return fc
+
+
+def set_forecast_groups(frame: pd.DataFrame, mask, temp_col: str) -> pd.DataFrame:
+    """Set forecast-time calibration groups in this frame; preserve reporting flags."""
+    if not mask.any():
+        return frame
+    t = frame.loc[mask, temp_col].to_numpy(dtype=float)
+    available = np.isfinite(t)
+    groups = np.select([t < frame.loc[mask, "cold_temp_threshold"].to_numpy(),
+                        frame.loc[mask, "peak_exante"].to_numpy(dtype=bool)],
+                       ["cold", "peak_exante"], default="other")
+    frame.loc[mask, "group"] = np.where(available, groups, "unavailable")
+    frame.loc[mask, "group_available"] = available
+    return frame
