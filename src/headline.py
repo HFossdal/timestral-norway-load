@@ -103,8 +103,8 @@ def thumbnail(cfg):
     ax.set_axisbelow(True)
     fig.text(0.04, 0.925, "Give Timestral more history and it reacts more strongly to cold", fontsize=21,
              color=ink, fontweight="bold", ha="left")
-    fig.text(0.04, 0.865, "How much each model's forecast rises when the weather turns 3 °C colder, as a share of how much\n"
-                          "Norwegian electricity load really rises (1.0 = fully). Test winter 2025-26, five price zones.",
+    fig.text(0.04, 0.865, "Forecast response to future temperatures 3 °C colder, divided by each zone's estimated historical\n"
+                          "load–temperature slope (1.0 = matches that reference). Test winter 2025-26, five bidding zones.",
              fontsize=13, color=ink2, ha="left", va="top", linespacing=1.4)
     fig.subplots_adjust(left=0.08, right=0.97, top=0.74, bottom=0.12)
     fig.savefig(ROOT / cfg["paths"]["results"] / "figures" / "thumbnail.png", facecolor=surface)
